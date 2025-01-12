@@ -1,3 +1,9 @@
+:root {
+    --color-text-white: #F1F1F1;
+    --color-button-main: #FF4C60;
+    --color-button-secondary: #2E97F4;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -37,7 +43,7 @@ button {
 }
 
 .header-button {
-    color: #F1F1F1;
+    color: var(--color-text-white);
     font-size: 18px;
     width: 130px;
     height: 50px;
@@ -46,11 +52,23 @@ button {
 }
 
 .rules {
-    background-color: #2E97F4
+    background-color: var(--color-button-secondary);
+}
+
+.rules:hover {
+    background-color: transparent;
+    border: 2px solid;
+    border-color: var(--color-button-secondary);
 }
 
 .about {
-    background-color: #FF4C60
+    background-color: var(--color-button-main);
+}
+
+.about:hover {
+    background-color: transparent;
+    border: 2px solid;
+    border-color: var(--color-button-main);
 }
 
 /* main */
@@ -62,19 +80,19 @@ button {
 }
 
 .main-text {
-    color: #F1F1F1;
+    color: var(--color-text-white);
     font-size: 40px;
 }
 
 .main-header {
-    color: #F1F1F1;
+    color: var(--color-text-white);
     font-size: 64px;
     margin-bottom: 90px;
     white-space: nowrap;
 }
 
 .main-button {
-    color: #F1F1F1;
+    color: var(--color-text-white);
     border-radius: 25px;
     border: none;
 }
@@ -83,15 +101,27 @@ button {
     font-size: 42px;
     width: 480px;
     height: 80px;
-    background-color: #FF4C60;
+    background-color: var(--color-button-main);
     margin-bottom: 40px;
+}
+
+.new:hover {
+    background-color: transparent;
+    border: 3px solid;
+    border-color: var(--color-button-main);
 }
 
 .join {
     font-size: 32px;
     width: 260px;
     height: 60px;
-    background-color: #2E97F4
+    background-color: var(--color-button-secondary)
+}
+
+.join:hover {
+    background-color: transparent;
+    border: 3px solid;
+    border-color: var(--color-button-secondary);
 }
 
 .main-elements {
@@ -106,7 +136,29 @@ button {
     width: 804px;
     height: 786px;
 }
+
 /* footer */
 .footer-section {
     background-color: #1A1A1A;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    padding: 25px 0;
+}
+
+.footer-icons-list {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.footer-icon {
+    width: 48px;
+    height: 48px;
+    fill: var(--color-text-white);
+}
+
+.footer-icon:hover {
+    fill: var(--color-button-main);
 }

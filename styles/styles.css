@@ -162,3 +162,36 @@ button {
 .footer-icon:hover {
     fill: var(--color-button-main);
 }
+
+/* modal */
+.backdrop{
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(0, 0, 0, 0.5);
+}
+
+.backdrop.is-hidden{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.modal {
+    position: relative;
+    width: 880px;
+    height: 880px;
+    background-color: #1A1A1A;
+    border-radius: 32px;
+}
+
+.modal-btn-close{
+    position: absolute;
+    top: 40px;
+    right: 40px;
+}

@@ -14,12 +14,16 @@
         </a>
         <ul class="header-list">
           <li>
-            <button type="button" class="header-button rules modal-btn-open">
+            <!-- prettier-ignore -->
+            <button type="button" class="header-button rules" data-open="rules-modal">
               Rules
             </button>
           </li>
           <li>
-            <button type="button" class="header-button about">About</button>
+            <!-- prettier-ignore -->
+            <button type="button" class="header-button about" data-open="about-modal">
+              About
+            </button>
           </li>
         </ul>
       </nav>
@@ -30,10 +34,12 @@
           <p class="main-text">Welcome to</p>
           <h1 class="main-header">Codenames Online</h1>
         </div>
-        <button type="button" class="main-button new modal-btn-open">
+        <button type="button" class="main-button new" data-open="create-modal">
           Create new Room
         </button>
-        <button type="button" class="main-button join">Join Room</button>
+        <button type="button" class="main-button join" data-open="join-modal">
+          Join Room
+        </button>
       </div>
       <img
         src="./imgs/secret_agent.png"
@@ -59,9 +65,71 @@
         </li>
       </ul>
     </footer>
-    <div class="backdrop">
+
+    <div class="backdrop is-hidden" id="rules-modal">
       <div class="modal">
-        <button type="button" class="modal-btn-close">Close</button>
+        <button type="button" class="modal-btn-close" data-modal="rules-modal">
+          Close
+        </button>
+        <h2 class="modal-header">Rules</h2>
+        <p class="modal-text">Rules content goes here...</p>
+      </div>
+    </div>
+
+    <div class="backdrop is-hidden" id="about-modal">
+      <div class="modal">
+        <button type="button" class="modal-btn-close" data-modal="about-modal">
+          Close
+        </button>
+        <h2 class="modal-header">About</h2>
+        <p class="modal-text">About content goes here...</p>
+      </div>
+    </div>
+
+    <div class="backdrop is-hidden" id="create-modal">
+      <div class="modal">
+        <button type="button" class="modal-btn-close" data-modal="create-modal">
+          Close
+        </button>
+        <h2 class="modal-header">Create a room</h2>
+        <form class="modal-form create-form" method="POST">
+          <div class="form-field">
+            <!-- prettier-ignore -->
+            <label class="form-label visually-hidden" for="user-name">Enter your name</label>
+            <!-- prettier-ignore -->
+            <input class="form-input create-input" name="user-name" id="user-name" type="text" minlength="3" maxlength="16" placeholder="Enter your name" required/>
+          </div>
+
+          <!-- prettier-ignore -->
+          <input class="submit-input create-submit" type="submit" value="Start the game" id="submit-input"/>
+        </form>
+      </div>
+    </div>
+
+    <div class="backdrop is-hidden" id="join-modal">
+      <div class="modal">
+        <button type="button" class="modal-btn-close" data-modal="join-modal">
+          Close
+        </button>
+        <h2 class="modal-header">Join a room</h2>
+        <form class="modal-form join-form" method="POST">
+          <div class="form-field">
+            <!-- prettier-ignore -->
+            <label class="form-label visually-hidden" for="user-name">Enter your name</label>
+            <!-- prettier-ignore -->
+            <input class="form-input join-input" name="user-name" id="user-name" type="text" minlength="3" maxlength="16" placeholder="Enter your name" required/>
+          </div>
+
+          <div class="form-field">
+            <!-- prettier-ignore -->
+            <label class="form-label visually-hidden" for="room-number">Enter id of the room</label>
+            <!-- prettier-ignore -->
+            <input class="form-input join-input" name="room-number" id="room-number" type="number" placeholder="Enter id of the room" required/>
+          </div>
+
+          <!-- prettier-ignore -->
+          <input class="submit-input join-submit" type="submit" value="Start the game" id="submit-input"/>
+        </form>
       </div>
     </div>
 

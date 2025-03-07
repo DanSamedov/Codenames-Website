@@ -46,6 +46,17 @@ logs/
 .babelrc
 .eslintcache
 
+# Prettier cache file
+.prettier-cache
+
+# Optional: Ignore Prettier config if you don’t want to share it
+.prettierrc
+.prettierrc.json
+.prettierrc.yml
+.prettierrc.js
+.prettierrc.toml
+.prettierignore
+
 # =========================
 # 📌 Editor & OS Files
 # =========================

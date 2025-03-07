@@ -1,0 +1,21 @@
+{% extends 'base.html' %} {% block content %}
+<h1>Game Room</h1>
+<p>Game ID: {{ game_object.id }}</p>
+
+<h2>Players:</h2>
+<ul>
+  {% for player in player_object %}
+  <h3>Nickname: {{ player.username }}</h3>
+  <li>Creator: {{ player.creator }}</li>
+  <li>Leader: {{ player.leader }}</li>
+  <li>Team: {{ player.team }}</li>
+  {% endfor %}
+  <p>Team Red</p>
+  <button type="submit">Leader</button>
+  <button type="submit">Guesser</button>
+  <p>Team Blue</p>
+  <button type="submit">Leader</button>
+  <button type="submit">Guesser</button>
+</ul>
+
+{% endblock %}

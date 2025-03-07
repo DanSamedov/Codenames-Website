@@ -1,0 +1,61 @@
+# =========================
+# 📌 Python & Django
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+
+# Django migrations (ignore all except __init__.py)
+**/migrations/*.py
+!**/migrations/__init__.py
+**/migrations/*.pyc
+
+# Database files
+db.sqlite3
+*.sqlite3
+
+# Django secret key & local settings
+.env
+*.env
+config/settings_local.py
+
+# Static and media files (if generated dynamically)
+staticfiles/
+media/
+media_root/
+static_root/
+
+# Logs
+*.log
+logs/
+
+# Compiled CSS (SASS, SCSS, PostCSS)
+*.sass-cache/
+*.scssc
+*.css.map
+*.sass.map
+
+# Cache files
+.cache/
+.babelrc
+.eslintcache
+
+# =========================
+# 📌 Editor & OS Files
+# =========================
+# VS Code
+.vscode/
+*.code-workspace
+
+# =========================
+# 📌 Dependency Management
+# =========================
+Pipfile.lock
+poetry.lock
+requirements.txt

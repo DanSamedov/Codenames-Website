@@ -1,22 +1,24 @@
+<!-- {% extends 'base.html' %} {% block content%} -->
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../static/css/styles.css" />
-    <title>Codenames - Welcome!</title>
+    <title>My test webpage</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
   </head>
   <body>
     <header class="header-section">
       <nav class="header-navbar">
         <a href="#">
-          <img src="./imgs/logo.png" alt="Logo" />
+          <img src="{% static 'imgs/logo.png' %}" alt="Logo" />
         </a>
         <ul class="header-list">
           <li>
             <!-- prettier-ignore -->
             <button type="button" class="header-button rules" data-open="rules-modal">
-              Rules
+                      Rules
             </button>
           </li>
           <li>
@@ -42,7 +44,7 @@
         </button>
       </div>
       <img
-        src="./imgs/secret_agent.png"
+        src="{% static 'imgs/secret_agent.png' %}"
         alt="Secret agent standing in the open door"
         class="main-image"
       />
@@ -52,14 +54,14 @@
         <li>
           <a href="#">
             <svg class="footer-icon">
-              <use href="./imgs/icons.svg#icon-github"></use>
+              <use href="{% static 'icons/icons.svg' %}#icon-github"></use>
             </svg>
           </a>
         </li>
         <li>
           <a href="#">
             <svg class="footer-icon">
-              <use href="./imgs/icons.svg#icon-linkedin"></use>
+              <use href="{% static 'icons/icons.svg' %}#icon-linkedin"></use>
             </svg>
           </a>
         </li>
@@ -133,6 +135,8 @@
       </div>
     </div>
 
-    <script src="../static/js/scripts.js"></script>
+    <script src="{% static 'js/scripts.js' %}"></script>
+
+    <!-- {% endblock %} -->
   </body>
 </html>

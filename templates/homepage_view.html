@@ -1,12 +1,12 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {% block content%}
 
-{% block content%}
-    
 <h1>This is homepage test view</h1>
-<form action='/room/create/' method='POST'>{% csrf_token %}
-    <p><input type='submit' value='Create game' /></p>
+<form action="/room/create/" method="POST">
+  {% csrf_token %}
+  <p><input type="submit" value="Create game" /></p>
 </form>
-<form action='/room/join/' method='POST'>{% csrf_token %}
-    <p><input type='submit' value='Join game' /></p>
+<form action="/room/join/" method="POST">
+  {% csrf_token %}
+  <p><input type="submit" value="Join game" /></p>
 </form>
 {% endblock %}

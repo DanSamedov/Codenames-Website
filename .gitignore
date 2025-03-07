@@ -25,12 +25,6 @@ db.sqlite3
 *.env
 config/settings_local.py
 
-# Static and media files (if generated dynamically)
-staticfiles/
-media/
-media_root/
-static_root/
-
 # Logs
 *.log
 logs/

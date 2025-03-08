@@ -88,13 +88,12 @@
       {% csrf_token %}
       <div class="form-field">
         <!-- prettier-ignore -->
-        <label class="form-label visually-hidden" for="user-name">Enter your name</label>
-        <!-- prettier-ignore -->
-        <input class="form-input create-input" name="user-name" id="user-name" type="text" minlength="3" maxlength="16" placeholder="Enter your name" required/>
+        <label class="form-label visually-hidden" for="{{ create_form.username.id_for_label }}">{{ create_form.username.label }}</label>
+        {{ create_form.username }}
       </div>
 
       <!-- prettier-ignore -->
-      <input class="submit-input create-submit" type="submit" value="Start the game" id="submit-input"/>
+      <input class="submit-input create-submit" name="create_room" type="submit" value="Start the game" id="submit-input"/>
     </form>
   </div>
 </div>
@@ -109,20 +108,18 @@
       {% csrf_token %}
       <div class="form-field">
         <!-- prettier-ignore -->
-        <label class="form-label visually-hidden" for="user-name">Enter your name</label>
-        <!-- prettier-ignore -->
-        <input class="form-input join-input" name="user-name" id="user-name" type="text" minlength="3" maxlength="16" placeholder="Enter your name" required/>
+        <label class="form-label visually-hidden" for="{{ join_form.username.id_for_label }}">{{ join_form.username.label }}</label>
+        {{ join_form.username }}
       </div>
 
       <div class="form-field">
         <!-- prettier-ignore -->
-        <label class="form-label visually-hidden" for="room-number">Enter id of the room</label>
-        <!-- prettier-ignore -->
-        <input class="form-input join-input" name="room-number" id="room-number" type="number" placeholder="Enter id of the room" required/>
+        <label class="form-label visually-hidden" for="{{ join_form.game_id.id_for_label }}">{{ join_form.game_id.label }}</label>
+        {{ join_form.game_id }}
       </div>
 
       <!-- prettier-ignore -->
-      <input class="submit-input join-submit" type="submit" value="Start the game" id="submit-input"/>
+      <input class="submit-input join-submit" name="join_room" type="submit" value="Start the game" id="submit-input"/>
     </form>
   </div>
 </div>

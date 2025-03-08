@@ -20,5 +20,5 @@ class Player(models.Model):
     team = models.CharField(
         max_length=10,
         choices=TEAM_CHOICES,
-        default='none'
+        default='None'
     )

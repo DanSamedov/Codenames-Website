@@ -10,6 +10,11 @@ def landing_forms_view(request):
     join_form = JoinRoomForm()
 
     if request.method == 'POST':
+        username = request.POST.get("username")
+
+        if username:
+            request.session["username"] = username 
+
         if 'create_room' in request.POST:
             create_form = CreateRoomForm(request.POST)
             if create_form.is_valid():
@@ -44,9 +49,14 @@ def landing_forms_view(request):
 def game_room_view(request, id):
     game_obj = get_object_or_404(Game, id=id)
     player_obj = Player.objects.filter(game=game_obj)
+
+    current_player_username = request.session.get("username")
+    current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
+
     context = {
         'game_object': game_obj,
-        'player_object': player_obj
+        'player_object': player_obj,
+        'current_player' : current_player
     }
     return render(request, 'game_room.html', context)
 
@@ -55,16 +65,21 @@ def game_room_view(request, id):
 #     form = CreateRoomForm(request.POST or None)
 #     if request.method == 'POST' and form.is_valid():
 #         game = Game.objects.create()
-        
+
 #         player = form.save(commit=False)
 #         player.game = game
 #         player.creator = True
 #         player.save()
+
+#         username = request.POST.get("username")
+
+#         if username:
+#             request.session["username"] = username 
         
 #         return redirect(f'/room/{game.id}/')
 
 #     context = {
-#         'form': form
+#         'create_form': form
 #     }
 #     return render(request, 'landing.html', context)
 

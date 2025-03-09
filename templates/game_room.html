@@ -4,12 +4,18 @@
 
 <h2>Players:</h2>
 <ul>
+  <h3>Your nickname: {{ current_player.username }}</h3>
+  <li>Creator: {{ current_player.creator }}</li>
+  <li>Leader: {{ current_player.leader }}</li>
+  <li>Team: {{ current_player.team }}</li>
   {% for player in player_object %}
+  <!-- prettier-ignore -->
+  {% if player.username != current_player.username %}
   <h3>Nickname: {{ player.username }}</h3>
   <li>Creator: {{ player.creator }}</li>
   <li>Leader: {{ player.leader }}</li>
   <li>Team: {{ player.team }}</li>
-  {% endfor %}
+  {% endif %} {% endfor %}
   <p>Team Red</p>
   <button type="submit">Leader</button>
   <button type="submit">Guesser</button>

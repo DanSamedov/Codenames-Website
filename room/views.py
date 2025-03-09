@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from .models import Game, Player
-from .forms import CreateRoomForm, JoinRoomForm
+from .forms import CreateRoomForm, JoinRoomForm, ChooseTeamForm
 from django.shortcuts import get_object_or_404, redirect
 
 
@@ -53,12 +53,43 @@ def game_room_view(request, id):
     current_player_username = request.session.get("username")
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
 
+    if request.method == 'POST':
+        form = ChooseTeamForm(request.POST)
+        if form.is_valid():
+            selected_team = form.cleaned_data["team"]
+            selected_role = form.cleaned_data["role"]
+
+            current_player.team = selected_team
+            current_player.leader = selected_role
+            
+            form = ChooseTeamForm()
+    else:
+        form = ChooseTeamForm()
+    
     context = {
+        'form': form,
         'game_object': game_obj,
         'player_object': player_obj,
         'current_player' : current_player
     }
     return render(request, 'game_room.html', context)
+
+
+# def choose_team_view(request):
+#     if request.method == 'POST':
+#         form = ChooseTeamForm(request.POST)
+#         if form.is_valid():
+#             selected_team = form.cleaned_data["team"]
+#             selected_role = form.cleaned_data["role"]
+#             print(f"User chose team: {selected_team}, role: {selected_role}")
+#     else:
+#         form = ChooseTeamForm()
+
+#     context = {
+#         'form': form
+#     }
+
+#     return render(request, 'game_room.html', context)
 
 
 # def create_room_view(request):

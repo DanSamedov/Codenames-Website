@@ -17,11 +17,10 @@
   <li>Team: {{ player.team }}</li>
   {% endif %} {% endfor %}
   <p>Team Red</p>
-  <button type="submit">Leader</button>
-  <button type="submit">Guesser</button>
-  <p>Team Blue</p>
-  <button type="submit">Leader</button>
-  <button type="submit">Guesser</button>
+  <form method="POST">
+    {% csrf_token %} {{ form.as_p }}
+    <button type="submit" name="btn" value="Submit">Play</button>
+  </form>
 </ul>
 
 {% endblock %}

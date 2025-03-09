@@ -32,3 +32,18 @@ class JoinRoomForm(forms.Form):
         required=True,
         widget=forms.NumberInput(attrs={'class': 'form-input join-input', 'placeholder': 'Enter id of the room'})
     )
+
+
+class ChooseTeamForm(forms.Form):
+    TEAM_CHOICE = [
+        ('Blue', 'Team Blue'),
+        ('Red', 'Team Red')
+    ]
+
+    ROLE_CHOICE = [
+        (True, 'Leader'),
+        (False, 'Guesser')
+    ]
+
+    team = forms.ChoiceField(choices=TEAM_CHOICE, widget=forms.RadioSelect, required=True)
+    role = forms.ChoiceField(choices=ROLE_CHOICE, widget=forms.RadioSelect, required=True)

@@ -54,20 +54,21 @@ def game_room_view(request, id):
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
 
     if request.method == 'POST':
-        form = ChooseTeamForm(request.POST)
-        if form.is_valid():
-            selected_team = form.cleaned_data["team"]
-            selected_role = form.cleaned_data["role"]
+        choose_form = ChooseTeamForm(request.POST)
+        if choose_form.is_valid():
+            selected_team = choose_form.cleaned_data["team"]
+            selected_role = choose_form.cleaned_data["role"]
 
             current_player.team = selected_team
             current_player.leader = selected_role
+            current_player.save()
             
-            form = ChooseTeamForm()
+            choose_form = ChooseTeamForm()
     else:
-        form = ChooseTeamForm()
+        choose_form = ChooseTeamForm()
     
     context = {
-        'form': form,
+        'choose_form': choose_form,
         'game_object': game_obj,
         'player_object': player_obj,
         'current_player' : current_player

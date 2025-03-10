@@ -24,6 +24,13 @@ class Player(models.Model):
     )
 
 
+class Word(models.Model):
+    text = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.text
+
+
 class Card(models.Model):
     COLOR_CHOICES = [
         ('Red', 'Red'),
@@ -32,8 +39,9 @@ class Card(models.Model):
         ('Black', 'Black')
     ]
 
-    word = models.CharField(default='', unique=True)
-    color = models.CharField(choices=COLOR_CHOICES, default='Neutral')
+    word = models.ForeignKey(Word, on_delete=models.CASCADE)
+    game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    color = models.CharField(max_length=10, choices=COLOR_CHOICES, default='Neutral')
 
     def __str__(self):
-        return self.text
+        return f"{self.word.text} ({self.color})"

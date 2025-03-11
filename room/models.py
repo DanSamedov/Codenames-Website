@@ -23,6 +23,9 @@ class Player(models.Model):
         default='None'
     )
 
+    class Meta:
+        unique_together = ('username', 'game')
+
 
 class Word(models.Model):
     text = models.CharField(max_length=50, unique=True)
@@ -32,16 +35,8 @@ class Word(models.Model):
 
 
 class Card(models.Model):
-    COLOR_CHOICES = [
-        ('Red', 'Red'),
-        ('Blue', 'Blue'),
-        ('Neutral', 'Neutral'),
-        ('Black', 'Black')
-    ]
-
-    word = models.ForeignKey(Word, on_delete=models.CASCADE)
+    words = models.JSONField(default=dict)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
-    color = models.CharField(max_length=10, choices=COLOR_CHOICES, default='Neutral')
 
     def __str__(self):
-        return f"{self.word.text} ({self.color})"
+        return f"Game {self.game.id} - {len(self.words)} words"

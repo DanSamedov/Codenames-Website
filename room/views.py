@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Game, Player
+from .models import Game, Player, Card
 from .forms import CreateRoomForm, JoinRoomForm, ChooseTeamForm
 from django.shortcuts import get_object_or_404, redirect
+from .cards_logic import generate_cards
 
 
 def landing_forms_view(request):
@@ -47,6 +48,8 @@ def landing_forms_view(request):
 
 
 def game_room_view(request, id):
+    choose_form = ChooseTeamForm()
+
     game_obj = get_object_or_404(Game, id=id)
     player_obj = Player.objects.filter(game=game_obj)
 
@@ -54,24 +57,33 @@ def game_room_view(request, id):
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
 
     if request.method == 'POST':
-        choose_form = ChooseTeamForm(request.POST)
-        if choose_form.is_valid():
-            selected_team = choose_form.cleaned_data["team"]
-            selected_role = choose_form.cleaned_data["role"]
+        if "choose_team" in request.POST:
+            choose_form = ChooseTeamForm(request.POST)
+            if choose_form.is_valid():
+                selected_team = choose_form.cleaned_data["team"]
+                selected_role = choose_form.cleaned_data["role"]
 
-            current_player.team = selected_team
-            current_player.leader = selected_role
-            current_player.save()
-            
-            choose_form = ChooseTeamForm()
+                current_player.team = selected_team
+                current_player.leader = selected_role
+                current_player.save()
+                
+                choose_form = ChooseTeamForm()
+
+        elif "start_game" in request.POST and current_player and current_player.creator:
+            generate_cards(game_obj)
+
     else:
         choose_form = ChooseTeamForm()
+
+    card_obj = Card.objects.filter(game=game_obj).first()
+    words_dict = card_obj.words if card_obj else {}
     
     context = {
         'choose_form': choose_form,
         'game_object': game_obj,
         'player_object': player_obj,
-        'current_player' : current_player
+        'current_player' : current_player,
+        'words_dict': words_dict
     }
     return render(request, 'game_room.html', context)
 

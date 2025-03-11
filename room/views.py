@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from .models import Game, Player, Card
+from .models import Game, Player
 from .forms import CreateRoomForm, JoinRoomForm, ChooseTeamForm
 from django.shortcuts import get_object_or_404, redirect
-from .cards_logic import generate_cards
 
 
 def landing_forms_view(request):
@@ -70,20 +69,16 @@ def game_room_view(request, id):
                 choose_form = ChooseTeamForm()
 
         elif "start_game" in request.POST and current_player and current_player.creator:
-            generate_cards(game_obj)
+            return redirect(f'/game/{game_obj.id}/')
 
     else:
         choose_form = ChooseTeamForm()
-
-    card_obj = Card.objects.filter(game=game_obj).first()
-    words_dict = card_obj.words if card_obj else {}
     
     context = {
         'choose_form': choose_form,
         'game_object': game_obj,
         'player_object': player_obj,
         'current_player' : current_player,
-        'words_dict': words_dict
     }
     return render(request, 'game_room.html', context)
 

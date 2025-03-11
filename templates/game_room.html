@@ -17,24 +17,15 @@
   <li>Team: {{ player.team }}</li>
   {% endif %} {% endfor %}
 </ul>
+
 <form method="POST">
   {% csrf_token %} {{ choose_form.as_p }}
   <button type="submit" name="choose_team">Play</button>
 </form>
+
 {% if current_player.creator %}
 <form method="POST">
   {% csrf_token %}
   <button type="submit" name="start_game">Start the Game</button>
 </form>
-{% endif %} {% if words_dict %}
-<h2>Game Board</h2>
-<div class="board">
-  {% for word, color in words_dict.items %}
-  <div class="card" style="background-color: lightgray">
-    <p>{{ word }}</p>
-  </div>
-  {% endfor %}
-</div>
-{% else %}
-<p>The game has not started yet.</p>
 {% endif %} {% endblock %}

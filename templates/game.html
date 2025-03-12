@@ -1,0 +1,9 @@
+{% extends 'base.html' %} {% block content %}
+<h1>Game {{ game_obj.id }} Started</h1>
+{% for card in cards %}
+<ul>
+  {% for word in card.words %}
+  <li>{{ word.word }} - {{ word.color }}</li>
+  {% endfor %}
+</ul>
+{% endfor %} {% endblock %}

@@ -46,7 +46,7 @@ def landing_forms_view(request):
     return render(request, 'landing.html', context)
 
 
-def game_room_view(request, id):
+def setup_room_view(request, id):
     choose_form = ChooseTeamForm()
 
     game_obj = get_object_or_404(Game, id=id)
@@ -80,7 +80,7 @@ def game_room_view(request, id):
         'player_object': player_obj,
         'current_player' : current_player,
     }
-    return render(request, 'game_room.html', context)
+    return render(request, 'setup_room.html', context)
 
 
 # def choose_team_view(request):

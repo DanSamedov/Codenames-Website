@@ -1,14 +1,14 @@
-{% extends 'base.html' %} {% block content %}
+{% extends 'base.html' %} {% load static %} {% block content %}
 <h1>Game Room</h1>
-<p>Game ID: {{ game_object.id }}</p>
+<p>Game ID: {{ game_obj.id }}</p>
 
 <h2>Players:</h2>
 <ul>
-  <h3>Your nickname: {{ current_player.username }}</h3>
-  <li>Creator: {{ current_player.creator }}</li>
-  <li>Leader: {{ current_player.leader }}</li>
-  <li>Team: {{ current_player.team }}</li>
-  {% for player in player_object %}
+  <h3 id="your-nickname">Your nickname: {{ current_player.username }}</h3>
+  <li id="your-creator">Creator: {{ current_player.creator }}</li>
+  <li id="your-role">Leader: {{ current_player.leader }}</li>
+  <li id="your-team">Team: {{ current_player.team }}</li>
+  {% for player in player_obj %}
   <!-- prettier-ignore -->
   {% if player.username != current_player.username %}
   <h3>Nickname: {{ player.username }}</h3>
@@ -18,9 +18,9 @@
   {% endif %} {% endfor %}
 </ul>
 
-<form method="POST">
+<form method="POST" id="choose-team-form">
   {% csrf_token %} {{ choose_form.as_p }}
-  <button type="submit" name="choose_team">Play</button>
+  <button type="submit" id="choose-team-submit" name="choose_team">Play</button>
 </form>
 
 {% if current_player.creator %}
@@ -29,3 +29,65 @@
   <button type="submit" name="start_game">Start the Game</button>
 </form>
 {% endif %} {% endblock %}
+<!-- prettier-ignore -->
+{% block script %}
+<script>
+  var room_id = '{{ game_obj.id }}';
+
+  var roomSocket = new WebSocket(
+    'ws://' + window.location.host + '/ws/room/' + room_id + '/',
+  );
+
+  roomSocket.onmessage = function (e) {
+    var data = JSON.parse(e.data);
+    var role = data['role'];
+    var team = data['team'];
+
+    // Update the UI with the received data
+    document.querySelector('#your-role').textContent = 'Leader: ' + role;
+    document.querySelector('#your-team').textContent = 'Team: ' + team;
+  };
+
+  roomSocket.onclose = function (e) {
+    console.error('Room was closed unexpectedly');
+  };
+
+  document.querySelector('#choose-team-form').onsubmit = function (event) {
+    submitTeamChoice(event);
+  };
+
+  function submitTeamChoice(event) {
+    // Prevent the form from submitting
+    event.preventDefault();
+
+    // Get the selected role and team from the form
+    var selectedRole = document.querySelector('input[name="role"]:checked');
+    var selectedTeam = document.querySelector('input[name="team"]:checked');
+
+    // Check if both role and team are selected
+    if (!selectedRole || !selectedTeam) {
+      alert('Please select both a team and a role');
+      return;
+    }
+
+    selectedRole = selectedRole.value;
+    selectedTeam = selectedTeam.value;
+
+    // Send the selected role and team to the WebSocket
+    roomSocket.send(
+      JSON.stringify({
+        role: selectedRole,
+        team: selectedTeam,
+      }),
+    );
+
+    // Optionally, update the UI with the selected values
+    document.querySelector('#your-role').textContent =
+      'Leader: ' + (selectedRole === 'True' ? 'Leader' : 'Guesser');
+    document.querySelector('#your-team').textContent = 'Team: ' + selectedTeam;
+
+    // Optionally reset the form after submitting
+    document.querySelector('#choose-team-form').reset();
+  }
+</script>
+{% endblock %}

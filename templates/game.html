@@ -1,9 +1,14 @@
 {% extends 'base.html' %} {% block content %}
 <h1>Game {{ game_obj.id }} Started</h1>
+<p>Your nickname: {{ current_player.username }}</p>
+<p>Your team: {{ current_player.team }}</p>
+
 {% for card in cards %}
 <ul>
   {% for word in card.words %}
-  <li>{{ word.word }} - {{ word.color }}</li>
-  {% endfor %}
+  <li>word: {{ word.word }}</li>
+  {% if current_player.leader == True%}
+  <li>color: {{ word.color }}</li>
+  {% endif %} {% endfor %}
 </ul>
 {% endfor %} {% endblock %}

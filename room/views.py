@@ -18,14 +18,14 @@ def landing_forms_view(request):
         if 'create_room' in request.POST:
             create_form = CreateRoomForm(request.POST)
             if create_form.is_valid():
-                game = Game.objects.create()
+                game_obj = Game.objects.create()
 
                 player = create_form.save(commit=False)
-                player.game = game
+                player.game = game_obj
                 player.creator = True
                 player.save()
 
-                return redirect(f'/room/{game.id}/')
+                return redirect(f'/room/{game_obj.id}/')
         
         elif 'join_room' in request.POST:
             join_form = JoinRoomForm(request.POST)
@@ -76,70 +76,32 @@ def setup_room_view(request, id):
     
     context = {
         'choose_form': choose_form,
-        'game_object': game_obj,
-        'player_object': player_obj,
+        'game_obj': game_obj,
+        'player_obj': player_obj,
         'current_player' : current_player,
     }
     return render(request, 'setup_room.html', context)
 
+# def setup_room_view(request, id):
+#     # Initialize the form to display to the user
+#     choose_form = ChooseTeamForm()
 
-# def choose_team_view(request):
-#     if request.method == 'POST':
-#         form = ChooseTeamForm(request.POST)
-#         if form.is_valid():
-#             selected_team = form.cleaned_data["team"]
-#             selected_role = form.cleaned_data["role"]
-#             print(f"User chose team: {selected_team}, role: {selected_role}")
-#     else:
-#         form = ChooseTeamForm()
+#     # Get the current game object
+#     game_obj = get_object_or_404(Game, id=id)
 
+#     # Get the players in the game
+#     player_obj = Player.objects.filter(game=game_obj)
+
+#     # Get the current player's details using the session
+#     current_player_username = request.session.get("username")
+#     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
+
+#     # Render the setup page without handling form submission via POST
 #     context = {
-#         'form': form
+#         'choose_form': choose_form,
+#         'game_obj': game_obj,
+#         'player_obj': player_obj,
+#         'current_player': current_player,
 #     }
+#     return render(request, 'setup_room.html', context)
 
-#     return render(request, 'game_room.html', context)
-
-
-# def create_room_view(request):
-#     form = CreateRoomForm(request.POST or None)
-#     if request.method == 'POST' and form.is_valid():
-#         game = Game.objects.create()
-
-#         player = form.save(commit=False)
-#         player.game = game
-#         player.creator = True
-#         player.save()
-
-#         username = request.POST.get("username")
-
-#         if username:
-#             request.session["username"] = username 
-        
-#         return redirect(f'/room/{game.id}/')
-
-#     context = {
-#         'create_form': form
-#     }
-#     return render(request, 'landing.html', context)
-
-
-# def join_room_view(request):
-#     if request.method == 'POST':
-#         form = JoinRoomForm(request.POST)
-#         if form.is_valid():
-#             game_id = form.cleaned_data['game_id']
-#             username = form.cleaned_data['username']
-            
-#             game_obj = get_object_or_404(Game, id=game_id)
-            
-#             Player.objects.create(username=username, game=game_obj)
-
-#             return redirect(f'/room/{game_obj.id}/')
-#     else:
-#         form = JoinRoomForm()
-    
-#     context = {
-#         'form': form
-#     }
-
-#     return render(request, 'landing.html', context)

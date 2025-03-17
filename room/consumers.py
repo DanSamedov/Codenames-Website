@@ -44,6 +44,7 @@ class RoomConsumer(WebsocketConsumer):
                 self.room_group_name,
                 {
                     'type': 'team_choice',
+                    'username': username,
                     'role': role,
                     'team': team,
 
@@ -55,11 +56,12 @@ class RoomConsumer(WebsocketConsumer):
 
 
     def team_choice(self, event):
+        username = event['username']
         role = event['role']
         team = event['team']
 
-
         self.send(text_data=json.dumps({
+            'username': username,
             'role': role,
             'team': team,
         }))

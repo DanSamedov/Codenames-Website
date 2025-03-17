@@ -27,16 +27,31 @@ class RoomConsumer(WebsocketConsumer):
         role = user_data.get('role')
         team = user_data.get('team')
 
+        username = self.scope["session"].get("username")
+        if not username:
+            self.send(text_data=json.dumps({"error": "User not authenticated"}))
+            return
 
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': 'team_choice',
-                'role': role,
-                'team': team,
+        from room.models import Player, Game
+        current_player = Player.objects.filter(game=self.room_id, username=username).first()
 
-            }
-        )
+        if current_player:
+            current_player.leader = role
+            current_player.team = team
+            current_player.save()
+
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    'type': 'team_choice',
+                    'role': role,
+                    'team': team,
+
+                }
+            )
+
+        else:
+            self.send(text_data=json.dumps({"error": "Player not found"}))
 
 
     def team_choice(self, event):

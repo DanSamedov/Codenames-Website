@@ -81,12 +81,7 @@
       }),
     );
 
-    // Optionally, update the UI with the selected values
-    document.querySelector('#your-role').textContent =
-      'Leader: ' + (selectedRole === 'True' ? 'Leader' : 'Guesser');
-    document.querySelector('#your-team').textContent = 'Team: ' + selectedTeam;
-
-    // Optionally reset the form after submitting
+    // Reset the form after submitting
     document.querySelector('#choose-team-form').reset();
   }
 </script>

@@ -19,14 +19,15 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'codenames.settings')
 
 django_asgi_app = get_asgi_application()
 
-from room import routing
+import room.routing
+import game.routing
 
 application = ProtocolTypeRouter({    
     "http": django_asgi_app,
     "websocket": AllowedHostsOriginValidator(
                 SessionMiddlewareStack(
                 AuthMiddlewareStack(
-                    URLRouter(routing.websocket_urlpatterns)
+                    URLRouter(room.routing.websocket_urlpatterns) #+ game.routing.websocket_urlpatterns)
                 )
             )
         ),

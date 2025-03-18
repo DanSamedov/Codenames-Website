@@ -20,7 +20,7 @@
 </form>
 
 {% if current_player.creator %}
-<form method="POST">
+<form method="POST" id="start-game-form">
   {% csrf_token %}
   <button type="submit" name="start_game">Start the Game</button>
 </form>
@@ -39,19 +39,39 @@
     var username = data['username'];
     var role = data['role'];
     var team = data['team'];
-
     var playerElement = document.querySelector('#player-' + username);
 
-    if (playerElement) {
-      playerElement.querySelector('.player-role').textContent =
-        'Leader: ' + role;
-      playerElement.querySelector('.player-team').textContent = 'Team: ' + team;
+    if (data.action === 'team_choice') {
+      if (playerElement) {
+        playerElement.querySelector('.player-role').textContent =
+          'Leader: ' + role;
+        playerElement.querySelector('.player-team').textContent =
+          'Team: ' + team;
+      }
+    } else if (data.action === 'redirect') {
+      window.location.href = '/game/' + data.room_id;
     }
   };
 
   roomSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
   };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var form = document.querySelector('#start-game-form');
+    if (form) {
+      form.onsubmit = function (event) {
+        event.preventDefault();
+
+        roomSocket.send(
+          JSON.stringify({
+            action: 'start_game',
+            room_id: room_id,
+          }),
+        );
+      };
+    }
+  });
 
   document.querySelector('#choose-team-form').onsubmit = function (event) {
     submitTeamChoice(event);
@@ -77,6 +97,7 @@
     // Send the selected role and team to the WebSocket
     roomSocket.send(
       JSON.stringify({
+        action: 'change_team',
         role: selectedRole,
         team: selectedTeam,
       }),

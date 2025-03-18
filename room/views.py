@@ -68,11 +68,8 @@ def setup_room_view(request, id):
                 
     #             choose_form = ChooseTeamForm()
 
-    #     elif "start_game" in request.POST and current_player and current_player.creator:
-    #         return redirect(f'/game/{game_obj.id}/')
-
-    # else:
-    #     choose_form = ChooseTeamForm()
+    # if "start_game" in request.POST and current_player and current_player.creator:
+    #     return redirect(f'/game/{game_obj.id}/')
     
     context = {
         'choose_form': choose_form,

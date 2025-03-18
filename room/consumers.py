@@ -23,15 +23,24 @@ class RoomConsumer(WebsocketConsumer):
 
 
     def receive(self, text_data=None, bytes_data=None):
-        user_data = json.loads(text_data)
-        role = user_data.get('role')
-        team = user_data.get('team')
+        data = json.loads(text_data)
+        role = data.get('role')
+        team = data.get('team')
+        room_id = data.get('room_id')
 
         username = self.scope["session"].get("username")
         if not username:
             self.send(text_data=json.dumps({"error": "User not authenticated"}))
             return
+        
+        if data["action"] == "change_team":
+            self.change_team(username, role, team)
 
+        elif data["action"] == "start_game":
+            self.start_game(room_id)
+
+
+    def change_team(self, username, role, team):
         from room.models import Player, Game
         current_player = Player.objects.filter(game=self.room_id, username=username).first()
 
@@ -51,8 +60,15 @@ class RoomConsumer(WebsocketConsumer):
                 }
             )
 
-        else:
-            self.send(text_data=json.dumps({"error": "Player not found"}))
+
+    def start_game(self, room_id):
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                "type": "redirect_players",
+                "room_id": room_id,
+            }
+        )
 
 
     def team_choice(self, event):
@@ -61,7 +77,17 @@ class RoomConsumer(WebsocketConsumer):
         team = event['team']
 
         self.send(text_data=json.dumps({
+            'action':'team_choice',
             'username': username,
             'role': role,
             'team': team,
+        }))
+
+
+    def redirect_players(self, event):
+        room_id = event['room_id']
+
+        self.send(text_data=json.dumps({
+            'action':'redirect',
+            "room_id": room_id,
         }))

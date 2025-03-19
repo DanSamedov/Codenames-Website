@@ -17,6 +17,7 @@ class Player(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     creator = models.BooleanField(default=False)
     leader = models.BooleanField(default=False)
+    ready = models.BooleanField(default=False)
     team = models.CharField(
         max_length=10,
         choices=TEAM_CHOICES,

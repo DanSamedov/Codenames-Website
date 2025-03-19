@@ -54,22 +54,6 @@ def setup_room_view(request, id):
 
     current_player_username = request.session.get("username")
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
-
-    # if request.method == 'POST':
-    #     if "choose_team" in request.POST:
-    #         choose_form = ChooseTeamForm(request.POST)
-    #         if choose_form.is_valid():
-    #             selected_team = choose_form.cleaned_data["team"]
-    #             selected_role = choose_form.cleaned_data["role"]
-
-    #             current_player.team = selected_team
-    #             current_player.leader = selected_role
-    #             current_player.save()
-                
-    #             choose_form = ChooseTeamForm()
-
-    # if "start_game" in request.POST and current_player and current_player.creator:
-    #     return redirect(f'/game/{game_obj.id}/')
     
     context = {
         'choose_form': choose_form,

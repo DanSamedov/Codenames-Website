@@ -1,6 +1,8 @@
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
+from room.models import Player, Game
+
 
 class RoomConsumer(WebsocketConsumer):
     def connect(self):
@@ -41,12 +43,12 @@ class RoomConsumer(WebsocketConsumer):
 
 
     def change_team(self, username, role, team):
-        from room.models import Player, Game
         current_player = Player.objects.filter(game=self.room_id, username=username).first()
 
         if current_player:
             current_player.leader = role
             current_player.team = team
+            current_player.ready = True
             current_player.save()
 
             async_to_sync(self.channel_layer.group_send)(
@@ -62,13 +64,23 @@ class RoomConsumer(WebsocketConsumer):
 
 
     def start_game(self, room_id):
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                "type": "redirect_players",
-                "room_id": room_id,
-            }
-        )
+        if Player.objects.filter(game=room_id).count() == Player.objects.filter(game=room_id, ready=True).count():
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    "type": "redirect_players",
+                    "room_id": room_id,
+                }
+            )
+        else:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    "type": "unready_players",
+                    "unready_players": list(Player.objects.filter(game=room_id, ready=False).values_list("username", flat=True)),
+                    "creator": Player.objects.get(game=room_id, creator=True).username
+                }
+            )
 
 
     def team_choice(self, event):
@@ -90,4 +102,15 @@ class RoomConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps({
             'action':'redirect',
             "room_id": room_id,
+        }))
+
+
+    def unready_players(self, event):
+        unready_players = event['unready_players']
+        creator = event['creator']
+
+        self.send(text_data=json.dumps({
+            'action': 'unready',
+            'unready_players': unready_players,
+            'creator': creator
         }))

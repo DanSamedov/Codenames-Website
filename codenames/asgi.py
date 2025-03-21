@@ -27,7 +27,7 @@ application = ProtocolTypeRouter({
     "websocket": AllowedHostsOriginValidator(
                 SessionMiddlewareStack(
                 AuthMiddlewareStack(
-                    URLRouter(room.routing.websocket_urlpatterns) #+ game.routing.websocket_urlpatterns)
+                    URLRouter(room.routing.websocket_urlpatterns + game.routing.websocket_urlpatterns)
                 )
             )
         ),

@@ -8,6 +8,16 @@ class RoomConsumer(WebsocketConsumer):
     def connect(self):
         self.room_id = self.scope['url_route']['kwargs']['id']
         self.room_group_name = f'room_{self.room_id}'
+        self.username = self.scope["session"].get("username")
+
+        if self.username:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    "type": "player_join",
+                    "username": self.username
+                }
+            )
 
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name,
@@ -81,6 +91,15 @@ class RoomConsumer(WebsocketConsumer):
                     "creator": Player.objects.get(game=room_id, creator=True).username
                 }
             )
+
+
+    def player_join(self, event):
+        username = event['username']
+
+        self.send(text_data=json.dumps({
+            'action': 'player_join',
+            'username': username
+        }))
 
 
     def team_choice(self, event):

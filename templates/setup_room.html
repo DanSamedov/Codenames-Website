@@ -66,6 +66,23 @@
       } else if (creator === currentUser) {
         window.alert('Wait until all players choose teams');
       }
+    } else if ((data.action = 'player_join')) {
+      var username = data['username'];
+
+      if (!document.querySelector(`#player-${username}`)) {
+        let playerList = document.querySelector('ul');
+
+        let newPlayer = document.createElement('li');
+        newPlayer.id = `player-${username}`;
+        newPlayer.innerHTML = `
+                <h3 class="player-nickname">Nickname: ${username}</h3>
+                <p class="player-creator">Creator: False</p>
+                <p class="player-role">Leader: False</p>
+                <p class="player-team">Team: None</p>
+            `;
+
+        playerList.appendChild(newPlayer);
+      }
     }
   };
 

@@ -34,6 +34,33 @@ class GameConsumer(WebsocketConsumer):
         )
 
 
+    def receive(self, text_data=None, bytes_data=None):
+        data = json.loads(text_data)
+
+        username = self.scope["session"].get("username")
+        if not username:
+            self.send(text_data=json.dumps({"error": "User not authenticated"}))
+            return
+        
+        if data["action"] == "card_choice":
+            card_id = data.get("card_id")
+            card_status = data.get("card_status")
+            self.card_choice(username, card_id, card_status)
+
+
+    def card_choice(self, username, card_id, card_status):
+         async_to_sync(self.channel_layer.group_send)(
+                self.game_group_name,
+                {
+                    'type': 'choose_card',
+                    'username': username,
+                    'card_id': card_id,
+                    'card_status': card_status,
+
+                }
+            )
+
+
     def player_join(self, event):
         username = event['username']
         leader_list = event['leader_list']
@@ -43,3 +70,16 @@ class GameConsumer(WebsocketConsumer):
             'username': username,
             'leader_list': leader_list
         }))    
+
+    
+    def choose_card(self, event):
+        username = event['username']
+        card_id = event['card_id']
+        card_status = event['card_status']
+
+        self.send(text_data=json.dumps({
+            'action':'choose_card',
+            'username': username,
+            'card_id': card_id,
+            'card_status': card_status,
+        }))

@@ -5,7 +5,12 @@
 
 <ul id="cards">
   {% for card in cards %} {% for word in card.words %}
-  <li id="card-{{ word.word }}" data-color="{{ word.color }}">
+  <li
+    id="card-{{ word.word }}"
+    data-color="{{ word.color }}"
+    data-is-chosen="false"
+    onclick="card_choice(this.id)"
+  >
     {{ word.word }}
   </li>
   {% endfor %} {% endfor %}
@@ -17,19 +22,15 @@
 <script>
   var game_id = '{{ game_obj.id }}';
 
-  var roomSocket = new WebSocket(
+  var gameSocket = new WebSocket(
     'ws://' + window.location.host + '/ws/game/' + game_id + '/',
   );
 
-  roomSocket.onmessage = function (e) {
-    console.log('hello onmessage');
-  };
-
-  roomSocket.onclose = function (e) {
+  gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
   };
 
-  roomSocket.onmessage = function (e) {
+  gameSocket.onmessage = function (e) {
     var data = JSON.parse(e.data);
 
     if (data.action === 'player_join') {
@@ -38,12 +39,48 @@
 
       if (leader_list.includes(username)) {
         var cards = document.querySelectorAll("[id^='card-']");
-
+        console.log(cards);
         cards.forEach(card => {
           card.style.backgroundColor = card.dataset.color;
         });
       }
+    } else if (data.action === 'choose_card') {
+      let username = data['username'];
+      let card_id = data['card_id'];
+      let card_status = data['card_status'];
+
+      let card = document.getElementById(card_id);
+
+      if (card_status === true) {
+        card.style.border = '2px solid yellow';
+        card.dataset.isChosen = 'true';
+      } else {
+        card.style.border = '';
+        card.dataset.isChosen = 'false';
+      }
     }
   };
+
+  function card_choice(card_id) {
+    let card = document.getElementById(card_id);
+    let isChosen = card.dataset.isChosen;
+
+    if (isChosen === 'true') {
+      card.style.border = '';
+      card.dataset.isChosen = 'false';
+    } else {
+      card.style.border = '2px solid yellow';
+      card.dataset.isChosen = 'true';
+    }
+
+    gameSocket.send(
+      JSON.stringify({
+        action: 'card_choice',
+        card_id: card_id,
+        card_status: card.dataset.isChosen === 'true',
+      }),
+    );
+    console.log(card.dataset.isChosen);
+  }
 </script>
 {% endblock %}

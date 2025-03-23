@@ -58,8 +58,10 @@
       var unready_players = data['unready_players'];
       var creator = data['creator'];
       var currentUser = '{{ current_player.username }}';
+
       if (unready_players.includes(currentUser)) {
         let form = document.querySelector('#choose-team-form');
+
         if (form) {
           form.reportValidity();
         }

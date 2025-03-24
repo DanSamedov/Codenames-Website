@@ -113,14 +113,11 @@
   };
 
   function submitTeamChoice(event) {
-    // Prevent the form from submitting
     event.preventDefault();
 
-    // Get the selected role and team from the form
     var selectedRole = document.querySelector('input[name="role"]:checked');
     var selectedTeam = document.querySelector('input[name="team"]:checked');
 
-    // Check if both role and team are selected
     if (!selectedRole || !selectedTeam) {
       alert('Please select both a team and a role');
       return;
@@ -129,7 +126,6 @@
     selectedRole = selectedRole.value;
     selectedTeam = selectedTeam.value;
 
-    // Send the selected role and team to the WebSocket
     roomSocket.send(
       JSON.stringify({
         action: 'change_team',
@@ -138,7 +134,6 @@
       }),
     );
 
-    // Reset the form after submitting
     document.querySelector('#choose-team-form').reset();
   }
 </script>

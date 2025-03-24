@@ -13,7 +13,18 @@
   >
     {{ word.word }}
   </li>
-  {% endfor %} {% endfor %}
+  {% endfor %} {% endfor %} {% if current_player.creator %}
+  <form method="POST">
+    <div id="clue-word-form">
+      <!-- prettier-ignore -->
+      <label
+        class="form-label visually-hidden"
+        for="{{ clue_form.clue.id_for_label }}">{{ clue_form.clue.label }}</label>
+      {% csrf_token %} {{ clue_form.clue}}
+    </div>
+    <input name="clue_word" type="submit" value="Give the clue" />
+    {% endif %}
+  </form>
 </ul>
 
 {% endblock %}
@@ -80,7 +91,6 @@
         card_status: card.dataset.isChosen === 'true',
       }),
     );
-    console.log(card.dataset.isChosen);
   }
 </script>
 {% endblock %}

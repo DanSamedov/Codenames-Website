@@ -15,7 +15,7 @@
   </li>
   {% endfor %} {% endfor %}
 </ul>
-{% if current_player.creator %}
+{% if current_player.leader %}
 <form id="hint-form">
   <div id="hint-input">
     <!-- prettier-ignore -->
@@ -39,6 +39,8 @@
     'ws://' + window.location.host + '/ws/game/' + game_id + '/',
   );
 
+  let currentUser = '{{ current_player.username }}';
+
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
   };
@@ -47,12 +49,10 @@
     var data = JSON.parse(e.data);
 
     if (data.action === 'player_join') {
-      var username = data['username'];
       var leader_list = data['leader_list'];
 
-      if (leader_list.includes(username)) {
+      if (leader_list.includes(currentUser)) {
         var cards = document.querySelectorAll("[id^='card-']");
-        console.log(cards);
         cards.forEach(card => {
           card.style.backgroundColor = card.dataset.color;
         });

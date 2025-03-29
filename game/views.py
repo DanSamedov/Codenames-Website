@@ -11,7 +11,7 @@ def game_view(request, id):
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
 
     card_obj = Card.objects.filter(game=game_obj)
-    last_hint = get_last_hint(game_obj, current_player.team)
+    last_hint = get_last_hint(game_obj)
 
     context = {
         'game_obj': game_obj,

@@ -9,8 +9,10 @@ def add_hint(game, team, hint_word, hint_num):
     hint_obj.save()
 
 
-def get_last_hint(game, team):
+def get_last_hint(game):
     hint_obj = Hint.objects.filter(game=game).first()
-    if hint_obj and team in hint_obj.hints and hint_obj.hints[team]:
-        return hint_obj.hints[team][-1]
+    if hint_obj:
+        all_hints = [hint for hints in hint_obj.hints.values() for hint in hints]
+        if all_hints:
+            return all_hints[-1]
     return None

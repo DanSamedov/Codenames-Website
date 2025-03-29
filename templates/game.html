@@ -36,9 +36,17 @@
   </div>
   <button type="submit" name="hint-form-submit">Give the hint</button>
 </form>
+<!-- prettier-ignore -->
 {% endif %}
+{% if last_hint %}
+<p id="hintDisplay">
+  Hint: {{ last_hint.word }} <br />Number of words: {{ last_hint.num }}
+</p>
+{% else %}
 <p id="hintDisplay"></p>
-{{ last_hint }} {% endblock %}
+<!-- prettier-ignore -->
+{% endif %}
+{% endblock %}
 <!-- prettier-ignore -->
 {% block script %}
 <script>

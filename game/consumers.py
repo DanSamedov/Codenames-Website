@@ -2,6 +2,8 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
 from room.models import Player, Game
+from game.utils.hints_logic import add_hint
+
 
 class GameConsumer(WebsocketConsumer):
     def connect(self):
@@ -42,11 +44,17 @@ class GameConsumer(WebsocketConsumer):
         if data["action"] == "card_choice":
             card_id = data.get("card_id")
             card_status = data.get("card_status")
+
             self.card_choice(username, card_id, card_status)
 
         if data["action"] == "hint_submit":
             hint_word = data["hintWord"]
-            self.hint_receive(hint_word)
+            hint_num = data["hintNum"]
+            leader_team = data["leaderTeam"]
+
+            add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
+
+            self.hint_receive(hint_word, hint_num)
 
 
     def card_choice(self, username, card_id, card_status):
@@ -62,12 +70,13 @@ class GameConsumer(WebsocketConsumer):
             )
 
 
-    def hint_receive(self, hint_word):
+    def hint_receive(self, hint_word, hint_num):
          async_to_sync(self.channel_layer.group_send)(
                 self.game_group_name,
                 {
                     'type': 'hint_display',
-                    'hint_word': hint_word
+                    'hint_word': hint_word,
+                    'hint_num': hint_num
                 }
             )
 
@@ -96,8 +105,10 @@ class GameConsumer(WebsocketConsumer):
 
     def hint_display(self, event):
         hint_word = event['hint_word']
+        hint_num = event['hint_num']
 
         self.send(text_data=json.dumps({
             'action': 'hint_display',
-            'hint_word': hint_word
+            'hint_word': hint_word,
+            'hint_num': hint_num
         }))

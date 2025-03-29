@@ -17,19 +17,28 @@
 </ul>
 {% if current_player.leader %}
 <form id="hint-form">
-  <div id="hint-input">
+  <div id="hint-word-input">
     <!-- prettier-ignore -->
     <label
         class="form-label visually-hidden"
-        for="hintInput">Enter the hint</label>
+        for="hintWordInput">Enter the hint
+    </label>
     <!-- prettier-ignore -->
-    <input type="text" id="hintInput" placeholder="Enter hint word" required/>
+    <input type="text" id="hintWordInput" placeholder="Enter hint word" required/>
+
+    <!-- prettier-ignore -->
+    <label
+        class="form-label visually-hidden"
+        for="hintNumInput">Enter number of words
+    </label>
+    <!-- prettier-ignore -->
+    <input type="number" id="hintNumInput" placeholder="Enter number of words" required/>
   </div>
-  <input name="hint-form-submit" type="submit" value="Give the hint" />
+  <button type="submit" name="hint-form-submit">Give the hint</button>
 </form>
 {% endif %}
 <p id="hintDisplay"></p>
-{% endblock %}
+{{ last_hint }} {% endblock %}
 <!-- prettier-ignore -->
 {% block script %}
 <script>
@@ -73,7 +82,10 @@
       }
     } else if (data.action === 'hint_display') {
       hintWord = data['hint_word'];
-      document.getElementById('hintDisplay').innerText = 'Hint: ' + hintWord;
+      hintNum = data['hint_num'];
+      document.getElementById(
+        'hintDisplay',
+      ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
     }
   };
 
@@ -113,13 +125,16 @@
   function submitHintWord(event) {
     event.preventDefault();
 
-    let hintWord = document.getElementById('hintInput');
-    hintWord = hintWord.value;
+    let hintWord = document.getElementById('hintWordInput').value;
+    let hintNum = document.getElementById('hintNumInput').value;
+    let leaderTeam = '{{ current_player.team }}';
 
     gameSocket.send(
       JSON.stringify({
         action: 'hint_submit',
         hintWord: hintWord,
+        hintNum: hintNum,
+        leaderTeam: leaderTeam,
       }),
     );
 

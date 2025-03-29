@@ -1,5 +1,5 @@
 import random
-from .models import Card, Word
+from game.models import Card, Word
 
 def generate_cards(game):
     words = list(Word.objects.order_by('?')[:25])

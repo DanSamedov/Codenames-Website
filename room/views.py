@@ -3,7 +3,7 @@ from .models import Game, Player
 from game.models import Card
 from .forms import CreateRoomForm, JoinRoomForm, ChooseTeamForm
 from django.shortcuts import get_object_or_404, redirect
-from game.cards_logic import generate_cards
+from game.utils.cards_logic import generate_cards
 
 
 def landing_forms_view(request):

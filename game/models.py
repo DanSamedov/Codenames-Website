@@ -14,3 +14,15 @@ class Card(models.Model):
 
     def __str__(self):
         return f"Game {self.game.id} - {len(self.words)} words"
+
+
+def default_hints():
+    return {
+        "Red": [],
+        "Blue": []
+    }
+
+
+class Hint(models.Model):
+    game = models.ForeignKey('room.Game', on_delete=models.CASCADE)
+    hints = models.JSONField(default=default_hints)

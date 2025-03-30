@@ -46,6 +46,7 @@
 <p id="hintDisplay"></p>
 <!-- prettier-ignore -->
 {% endif %}
+<p id="timer"></p>
 {% endblock %}
 <!-- prettier-ignore -->
 {% block script %}
@@ -91,9 +92,27 @@
     } else if (data.action === 'hint_display') {
       hintWord = data['hint_word'];
       hintNum = data['hint_num'];
+
       document.getElementById(
         'hintDisplay',
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
+    } else if (data.action === 'round_start') {
+      const roundDuration = data.duration;
+      const startTime = data.start_time * 1000;
+      const timerDisplay = document.getElementById('timer');
+
+      const timerInterval = setInterval(() => {
+        const now = Date.now();
+        const timeElapsed = Math.floor((now - startTime) / 1000);
+        const timeRemaining = roundDuration - timeElapsed;
+
+        timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          timerDisplay.textContent = "Time's up!";
+          // show guessed cards, start new round
+        }
+      }, 1000);
     }
   };
 

@@ -1,6 +1,6 @@
+import json, time
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
-import json
 from room.models import Player, Game
 from game.utils.hints_logic import add_hint
 
@@ -55,6 +55,16 @@ class GameConsumer(WebsocketConsumer):
             add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
 
             self.hint_receive(hint_word, hint_num)
+
+            #start round
+            async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                "type": "round_start",
+                "duration": 90,
+                "start_time": int(time.time())
+            }
+        )
 
 
     def card_choice(self, username, card_id, card_status):
@@ -111,4 +121,15 @@ class GameConsumer(WebsocketConsumer):
             'action': 'hint_display',
             'hint_word': hint_word,
             'hint_num': hint_num
+        }))
+
+    #start round
+    def round_start(self, event):
+        duration = event['duration']
+        start_time = event['start_time']
+
+        self.send(text_data=json.dumps({
+            "action": "round_start",
+            "duration": duration,
+            "start_time": start_time
         }))

@@ -25,6 +25,15 @@ class GameConsumer(WebsocketConsumer):
             }
         )
 
+        # synchronize timer time with server
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                "type": "sync_time",
+                "server_time": int(time.time())
+            }
+        )
+
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -132,4 +141,13 @@ class GameConsumer(WebsocketConsumer):
             "action": "round_start",
             "duration": duration,
             "start_time": start_time
+        }))
+
+    # synchronize timer time with server
+    def sync_time(self, event):
+        server_time = event['server_time']
+
+        self.send(text_data=json.dumps({
+            "action": "sync_time",
+            "server_time": server_time
         }))

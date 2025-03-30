@@ -51,13 +51,15 @@
 <!-- prettier-ignore -->
 {% block script %}
 <script>
-  var game_id = '{{ game_obj.id }}';
+  const game_id = '{{ game_obj.id }}';
 
-  var gameSocket = new WebSocket(
+  const gameSocket = new WebSocket(
     'ws://' + window.location.host + '/ws/game/' + game_id + '/',
   );
 
   let currentUser = '{{ current_player.username }}';
+
+  let clockOffset = 0; // default offset
 
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
@@ -96,23 +98,18 @@
       document.getElementById(
         'hintDisplay',
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
+    } else if (data.action === 'sync_time') {
+      // Offset is the difference (server_time - clientTime)
+      const clientTime = Date.now() / 1000;
+      clockOffset = data.server_time - clientTime;
     } else if (data.action === 'round_start') {
-      const roundDuration = data.duration;
-      const startTime = data.start_time * 1000;
-      const timerDisplay = document.getElementById('timer');
+      const roundDuration = data['duration'];
+      const startTime = (data['start_time'] + clockOffset) * 1000;
 
-      const timerInterval = setInterval(() => {
-        const now = Date.now();
-        const timeElapsed = Math.floor((now - startTime) / 1000);
-        const timeRemaining = roundDuration - timeElapsed;
+      localStorage.setItem('roundDuration', roundDuration);
+      localStorage.setItem('roundStartTime', startTime);
 
-        timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
-        if (timeRemaining <= 0) {
-          clearInterval(timerInterval);
-          timerDisplay.textContent = "Time's up!";
-          // show guessed cards, start new round
-        }
-      }, 1000);
+      startCountdown(roundDuration, startTime);
     }
   };
 
@@ -149,6 +146,15 @@
     }
   });
 
+  document.addEventListener('DOMContentLoaded', () => {
+    const storedDuration = localStorage.getItem('roundDuration');
+    const storedStartTime = localStorage.getItem('roundStartTime');
+
+    if (storedDuration && storedStartTime) {
+      startCountdown(Number(storedDuration), Number(storedStartTime));
+    }
+  });
+
   function submitHintWord(event) {
     event.preventDefault();
 
@@ -166,6 +172,24 @@
     );
 
     document.getElementById('hint-form').reset();
+  }
+
+  function startCountdown(roundDuration, startTime) {
+    const timerDisplay = document.getElementById('timer');
+    const timerInterval = setInterval(() => {
+      const now = Date.now();
+      const timeElapsed = Math.floor((now - startTime) / 1000);
+      const timeRemaining = roundDuration - timeElapsed;
+
+      timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        timerDisplay.textContent = "Time's up!";
+        localStorage.removeItem('roundDuration');
+        localStorage.removeItem('roundStartTime');
+        // add logic after round ends(counting cards, new round)
+      }
+    }, 1000);
   }
 </script>
 {% endblock %}

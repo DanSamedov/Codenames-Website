@@ -65,15 +65,25 @@ class GameConsumer(WebsocketConsumer):
 
             self.hint_receive(hint_word, hint_num)
 
-            #start round
+        #start round
+        if data["action"] == "start_round":
             async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
             {
                 "type": "round_start",
                 "duration": 90,
                 "start_time": int(time.time())
-            }
-        )
+            })
+        
+        #end round
+        if data["action"] == "end_round":
+            async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                "type": "hint_timer_start",
+                "duration": 60,
+                "start_time": int(time.time())
+            })
 
 
     def card_choice(self, username, card_id, card_status):
@@ -150,4 +160,15 @@ class GameConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps({
             "action": "sync_time",
             "server_time": server_time
+        }))
+
+
+    def hint_timer_start(self, event):
+        duration = event['duration']
+        start_time = event['start_time']
+
+        self.send(text_data=json.dumps({
+            "action": "hint_timer_start",
+            "duration": duration,
+            "start_time": start_time
         }))

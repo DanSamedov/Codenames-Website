@@ -99,17 +99,25 @@
         'hintDisplay',
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
     } else if (data.action === 'sync_time') {
-      // Offset is the difference (server_time - clientTime)
+      // Offset the difference (server_time - clientTime)
       const clientTime = Date.now() / 1000;
       clockOffset = data.server_time - clientTime;
     } else if (data.action === 'round_start') {
       const roundDuration = data['duration'];
       const startTime = (data['start_time'] + clockOffset) * 1000;
 
-      localStorage.setItem('roundDuration', roundDuration);
-      localStorage.setItem('roundStartTime', startTime);
+      localStorage.setItem('Duration', roundDuration);
+      localStorage.setItem('StartTime', startTime);
 
       startCountdown(roundDuration, startTime);
+    } else if (data.action === 'hint_timer_start') {
+      const hintCreatingDuration = data['duration'];
+      const startTime = (data['start_time'] + clockOffset) * 1000;
+
+      localStorage.setItem('Duration', hintCreatingDuration);
+      localStorage.setItem('StartTime', startTime);
+
+      startCountdown(hintCreatingDuration, startTime);
     }
   };
 
@@ -146,15 +154,6 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', () => {
-    const storedDuration = localStorage.getItem('roundDuration');
-    const storedStartTime = localStorage.getItem('roundStartTime');
-
-    if (storedDuration && storedStartTime) {
-      startCountdown(Number(storedDuration), Number(storedStartTime));
-    }
-  });
-
   function submitHintWord(event) {
     event.preventDefault();
 
@@ -171,23 +170,51 @@
       }),
     );
 
+    gameSocket.send(
+      JSON.stringify({
+        action: 'start_round',
+      }),
+    );
+
     document.getElementById('hint-form').reset();
   }
 
-  function startCountdown(roundDuration, startTime) {
+  document.addEventListener('DOMContentLoaded', () => {
+    const storedDuration = localStorage.getItem('Duration');
+    const storedStartTime = localStorage.getItem('StartTime');
+
+    if (storedDuration && storedStartTime) {
+      startCountdown(Number(storedDuration), Number(storedStartTime));
+    }
+  });
+
+  function startCountdown(duration, startTime) {
     const timerDisplay = document.getElementById('timer');
     const timerInterval = setInterval(() => {
       const now = Date.now();
       const timeElapsed = Math.floor((now - startTime) / 1000);
-      const timeRemaining = roundDuration - timeElapsed;
+      const timeRemaining = duration - timeElapsed;
 
       timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
       if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         timerDisplay.textContent = "Time's up!";
-        localStorage.removeItem('roundDuration');
-        localStorage.removeItem('roundStartTime');
+        localStorage.removeItem('Duration');
+        localStorage.removeItem('StartTime');
         // add logic after round ends(counting cards, new round)
+        if (duration === '90') {
+          gameSocket.send(
+            JSON.stringify({
+              action: 'round_end',
+            }),
+          );
+        } else {
+          gameSocket.send(
+            JSON.stringify({
+              action: 'start_round',
+            }),
+          );
+        }
       }
     }, 1000);
   }

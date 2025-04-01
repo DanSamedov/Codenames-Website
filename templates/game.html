@@ -16,7 +16,7 @@
   {% endfor %} {% endfor %}
 </ul>
 {% if current_player.leader %}
-<form id="hint-form">
+<form id="hint-form" class="visually-hidden">
   <div id="hint-word-input">
     <!-- prettier-ignore -->
     <label
@@ -60,6 +60,11 @@
   let currentUser = '{{ current_player.username }}';
 
   let clockOffset = 0; // default offset
+
+  const gameState = {
+    isHintPhase: false,
+    isRoundActive: true,
+  };
 
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
@@ -125,7 +130,7 @@
     let card = document.getElementById(card_id);
     let isChosen = card.dataset.isChosen;
 
-    if ('{{current_player.leader}}' != 'True') {
+    if ('{{current_player.leader}}' != 'True' && gameState.isRoundActive) {
       if (isChosen === 'true') {
         card.style.border = '';
         card.dataset.isChosen = 'false';
@@ -190,6 +195,8 @@
 
   function startCountdown(duration, startTime) {
     const timerDisplay = document.getElementById('timer');
+    const hintForm = document.getElementById('hint-form');
+
     const timerInterval = setInterval(() => {
       const now = Date.now();
       const timeElapsed = Math.floor((now - startTime) / 1000);
@@ -202,19 +209,26 @@
         localStorage.removeItem('Duration');
         localStorage.removeItem('StartTime');
         // add logic after round ends(counting cards, new round)
-        if (duration === '90') {
+        if (duration === 20) {
+          gameState.isHintPhase = true;
+          gameState.isRoundActive = false;
+
           gameSocket.send(
             JSON.stringify({
-              action: 'round_end',
+              action: 'end_round',
             }),
           );
         } else {
+          gameState.isHintPhase = false;
+          gameState.isRoundActive = true;
+
           gameSocket.send(
             JSON.stringify({
               action: 'start_round',
             }),
           );
         }
+        hintForm.classList.toggle('visually-hidden');
       }
     }, 1000);
   }

@@ -34,6 +34,7 @@ class GameConsumer(WebsocketConsumer):
             }
         )
 
+        # self.hint_phase()
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -71,19 +72,13 @@ class GameConsumer(WebsocketConsumer):
             self.game_group_name,
             {
                 "type": "round_start",
-                "duration": 90,
+                "duration": 20,
                 "start_time": int(time.time())
             })
         
         #end round
         if data["action"] == "end_round":
-            async_to_sync(self.channel_layer.group_send)(
-            self.game_group_name,
-            {
-                "type": "hint_timer_start",
-                "duration": 60,
-                "start_time": int(time.time())
-            })
+            self.hint_phase()
 
 
     def card_choice(self, username, card_id, card_status):
@@ -108,6 +103,16 @@ class GameConsumer(WebsocketConsumer):
                     'hint_num': hint_num
                 }
             )
+
+
+    def hint_phase(self):
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                "type": "hint_timer_start",
+                "duration": 10,
+                "start_time": int(time.time())
+            })
 
 
     def player_join(self, event):

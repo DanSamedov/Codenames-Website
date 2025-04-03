@@ -9,6 +9,7 @@ class GameConsumer(WebsocketConsumer):
     def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['id']
         self.game_group_name = f'game_{self.game_id}'
+        self.current_phase = 'hint'
 
         async_to_sync(self.channel_layer.group_add)(
             self.game_group_name,
@@ -26,15 +27,10 @@ class GameConsumer(WebsocketConsumer):
         )
 
         # synchronize timer time with server
-        async_to_sync(self.channel_layer.group_send)(
-            self.game_group_name,
-            {
-                "type": "sync_time",
-                "server_time": int(time.time())
-            }
-        )
+        self.sync()
 
         # self.hint_phase()
+        self.start_phase_cycle()
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -66,19 +62,13 @@ class GameConsumer(WebsocketConsumer):
 
             self.hint_receive(hint_word, hint_num)
 
-        #start round
-        if data["action"] == "start_round":
-            async_to_sync(self.channel_layer.group_send)(
-            self.game_group_name,
-            {
-                "type": "round_start",
-                "duration": 20,
-                "start_time": int(time.time())
-            })
-        
-        #end round
-        if data["action"] == "end_round":
-            self.hint_phase()
+        if data["action"] == "start_timer":
+            # Toggle the phase
+            if self.current_phase == 'round':
+                self.current_phase = 'hint'
+            else:
+                self.current_phase = 'round'
+            self.start_phase_cycle()
 
 
     def card_choice(self, username, card_id, card_status):
@@ -105,15 +95,42 @@ class GameConsumer(WebsocketConsumer):
             )
 
 
-    def hint_phase(self):
-        async_to_sync(self.channel_layer.group_send)(
-            self.game_group_name,
-            {
-                "type": "hint_timer_start",
-                "duration": 10,
-                "start_time": int(time.time())
-            })
+    def start_phase_cycle(self):
+        if self.current_phase == 'round':
+            # Start round phase with 20-second duration
+            duration = 20
+            start_time = int(time.time())
+            async_to_sync(self.channel_layer.group_send)(
+                self.game_group_name,
+                {
+                    "type": "round_start",
+                    "duration": duration,
+                    "start_time": start_time,
+                }
+            )
+        else:
+            # Start hint phase with 10-second duration
+            duration = 10
+            start_time = int(time.time())
+            async_to_sync(self.channel_layer.group_send)(
+                self.game_group_name,
+                {
+                    "type": "hint_timer_start",
+                    "duration": duration,
+                    "start_time": start_time,
+                }
+            )
 
+
+    def sync(self):
+        async_to_sync(self.channel_layer.group_send)(
+                self.game_group_name,
+                {
+                    "type": "sync_time",
+                    "server_time": int(time.time())
+                }
+            )
+    
 
     def player_join(self, event):
         leader_list = event['leader_list']
@@ -147,6 +164,15 @@ class GameConsumer(WebsocketConsumer):
             'hint_num': hint_num
         }))
 
+    # synchronize timer time with server
+    def sync_time(self, event):
+        server_time = event['server_time']
+
+        self.send(text_data=json.dumps({
+            "action": "sync_time",
+            "server_time": server_time
+        }))
+
     #start round
     def round_start(self, event):
         duration = event['duration']
@@ -156,15 +182,6 @@ class GameConsumer(WebsocketConsumer):
             "action": "round_start",
             "duration": duration,
             "start_time": start_time
-        }))
-
-    # synchronize timer time with server
-    def sync_time(self, event):
-        server_time = event['server_time']
-
-        self.send(text_data=json.dumps({
-            "action": "sync_time",
-            "server_time": server_time
         }))
 
 

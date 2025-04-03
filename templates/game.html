@@ -16,7 +16,7 @@
   {% endfor %} {% endfor %}
 </ul>
 {% if current_player.leader %}
-<form id="hint-form" class="visually-hidden">
+<form id="hint-form" class="">
   <div id="hint-word-input">
     <!-- prettier-ignore -->
     <label
@@ -61,11 +61,6 @@
 
   let clockOffset = 0; // default offset
 
-  const gameState = {
-    isHintPhase: false,
-    isRoundActive: true,
-  };
-
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
   };
@@ -108,21 +103,27 @@
       const clientTime = Date.now() / 1000;
       clockOffset = data.server_time - clientTime;
     } else if (data.action === 'round_start') {
-      const roundDuration = data['duration'];
-      const startTime = (data['start_time'] + clockOffset) * 1000;
+      if (!sessionStorage.getItem('timerRunning')) {
+        const roundDuration = data['duration'];
+        const startTime = (data['start_time'] + clockOffset) * 1000;
 
-      localStorage.setItem('Duration', roundDuration);
-      localStorage.setItem('StartTime', startTime);
+        sessionStorage.setItem('Duration', roundDuration);
+        sessionStorage.setItem('StartTime', startTime);
+        sessionStorage.setItem('timerRunning', 'true');
 
-      startCountdown(roundDuration, startTime);
+        startCountdown(roundDuration, startTime);
+      }
     } else if (data.action === 'hint_timer_start') {
-      const hintCreatingDuration = data['duration'];
-      const startTime = (data['start_time'] + clockOffset) * 1000;
+      if (!sessionStorage.getItem('timerRunning')) {
+        const roundDuration = data['duration'];
+        const startTime = (data['start_time'] + clockOffset) * 1000;
 
-      localStorage.setItem('Duration', hintCreatingDuration);
-      localStorage.setItem('StartTime', startTime);
+        sessionStorage.setItem('Duration', roundDuration);
+        sessionStorage.setItem('StartTime', startTime);
+        sessionStorage.setItem('timerRunning', 'true');
 
-      startCountdown(hintCreatingDuration, startTime);
+        startCountdown(roundDuration, startTime);
+      }
     }
   };
 
@@ -130,7 +131,10 @@
     let card = document.getElementById(card_id);
     let isChosen = card.dataset.isChosen;
 
-    if ('{{current_player.leader}}' != 'True' && gameState.isRoundActive) {
+    if (
+      '{{current_player.leader}}' != 'True' &&
+      sessionStorage.getItem('timerRunning')
+    ) {
       if (isChosen === 'true') {
         card.style.border = '';
         card.dataset.isChosen = 'false';
@@ -185,11 +189,13 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const storedDuration = localStorage.getItem('Duration');
-    const storedStartTime = localStorage.getItem('StartTime');
+    if (sessionStorage.getItem('timerRunning')) {
+      const storedDuration = sessionStorage.getItem('Duration');
+      const storedStartTime = sessionStorage.getItem('StartTime');
 
-    if (storedDuration && storedStartTime) {
-      startCountdown(Number(storedDuration), Number(storedStartTime));
+      if (storedDuration && storedStartTime) {
+        startCountdown(Number(storedDuration), Number(storedStartTime));
+      }
     }
   });
 
@@ -206,28 +212,17 @@
       if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         timerDisplay.textContent = "Time's up!";
-        localStorage.removeItem('Duration');
-        localStorage.removeItem('StartTime');
+        sessionStorage.removeItem('Duration');
+        sessionStorage.removeItem('StartTime');
+        sessionStorage.removeItem('timerRunning');
         // add logic after round ends(counting cards, new round)
-        if (duration === 20) {
-          gameState.isHintPhase = true;
-          gameState.isRoundActive = false;
 
-          gameSocket.send(
-            JSON.stringify({
-              action: 'end_round',
-            }),
-          );
-        } else {
-          gameState.isHintPhase = false;
-          gameState.isRoundActive = true;
+        gameSocket.send(
+          JSON.stringify({
+            action: 'start_timer',
+          }),
+        );
 
-          gameSocket.send(
-            JSON.stringify({
-              action: 'start_round',
-            }),
-          );
-        }
         hintForm.classList.toggle('visually-hidden');
       }
     }, 1000);

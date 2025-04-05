@@ -59,7 +59,9 @@
 
   let currentUser = '{{ current_player.username }}';
 
-  let clockOffset = 0; // default offset
+  let clockOffset = 0;
+  let timerInterval = null;
+  let currentPhase = 'hint';
 
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
@@ -98,11 +100,8 @@
       document.getElementById(
         'hintDisplay',
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
-    } else if (data.action === 'sync_time') {
-      // Offset the difference (server_time - clientTime)
-      const clientTime = Date.now() / 1000;
-      clockOffset = data.server_time - clientTime;
     } else if (data.action === 'round_start') {
+      currentPhase = 'round';
       if (!sessionStorage.getItem('timerRunning')) {
         const roundDuration = data['duration'];
         const startTime = (data['start_time'] + clockOffset) * 1000;
@@ -114,6 +113,7 @@
         startCountdown(roundDuration, startTime);
       }
     } else if (data.action === 'hint_timer_start') {
+      currentPhase = 'hint';
       if (!sessionStorage.getItem('timerRunning')) {
         const roundDuration = data['duration'];
         const startTime = (data['start_time'] + clockOffset) * 1000;
@@ -124,6 +124,10 @@
 
         startCountdown(roundDuration, startTime);
       }
+    } else if (data.action === 'sync_time') {
+      // Offset the difference (server_time - clientTime)
+      const clientTime = Date.now() / 1000;
+      clockOffset = data.server_time - clientTime;
     }
   };
 
@@ -133,7 +137,8 @@
 
     if (
       '{{current_player.leader}}' != 'True' &&
-      sessionStorage.getItem('timerRunning')
+      sessionStorage.getItem('timerRunning') &&
+      currentPhase === 'round'
     ) {
       if (isChosen === 'true') {
         card.style.border = '';
@@ -161,34 +166,7 @@
         submitHintWord(event);
       };
     }
-  });
 
-  function submitHintWord(event) {
-    event.preventDefault();
-
-    let hintWord = document.getElementById('hintWordInput').value;
-    let hintNum = document.getElementById('hintNumInput').value;
-    let leaderTeam = '{{ current_player.team }}';
-
-    gameSocket.send(
-      JSON.stringify({
-        action: 'hint_submit',
-        hintWord: hintWord,
-        hintNum: hintNum,
-        leaderTeam: leaderTeam,
-      }),
-    );
-
-    gameSocket.send(
-      JSON.stringify({
-        action: 'start_round',
-      }),
-    );
-
-    document.getElementById('hint-form').reset();
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('timerRunning')) {
       const storedDuration = sessionStorage.getItem('Duration');
       const storedStartTime = sessionStorage.getItem('StartTime');
@@ -199,11 +177,46 @@
     }
   });
 
+  function submitHintWord(event) {
+    event.preventDefault();
+    if (currentPhase === 'hint') {
+      let hintWord = document.getElementById('hintWordInput').value;
+      let hintNum = document.getElementById('hintNumInput').value;
+      let leaderTeam = '{{ current_player.team }}';
+
+      gameSocket.send(
+        JSON.stringify({
+          action: 'hint_submit',
+          hintWord: hintWord,
+          hintNum: hintNum,
+          leaderTeam: leaderTeam,
+        }),
+      );
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      sessionStorage.removeItem('Duration');
+      sessionStorage.removeItem('StartTime');
+      sessionStorage.removeItem('timerRunning');
+
+      gameSocket.send(
+        JSON.stringify({
+          action: 'start_round',
+        }),
+      );
+
+      document.getElementById('hint-form').reset();
+    }
+  }
+
   function startCountdown(duration, startTime) {
     const timerDisplay = document.getElementById('timer');
     const hintForm = document.getElementById('hint-form');
 
-    const timerInterval = setInterval(() => {
+    timerInterval = setInterval(() => {
       const now = Date.now();
       const timeElapsed = Math.floor((now - startTime) / 1000);
       const timeRemaining = duration - timeElapsed;
@@ -212,6 +225,7 @@
       if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         timerDisplay.textContent = "Time's up!";
+
         sessionStorage.removeItem('Duration');
         sessionStorage.removeItem('StartTime');
         sessionStorage.removeItem('timerRunning');
@@ -222,8 +236,6 @@
             action: 'start_timer',
           }),
         );
-
-        hintForm.classList.toggle('visually-hidden');
       }
     }, 1000);
   }

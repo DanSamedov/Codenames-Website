@@ -106,10 +106,6 @@
         const roundDuration = data['duration'];
         const startTime = (data['start_time'] + clockOffset) * 1000;
 
-        sessionStorage.setItem('Duration', roundDuration);
-        sessionStorage.setItem('StartTime', startTime);
-        sessionStorage.setItem('timerRunning', 'true');
-
         startCountdown(roundDuration, startTime);
       }
     } else if (data.action === 'hint_timer_start') {
@@ -117,10 +113,6 @@
       if (!sessionStorage.getItem('timerRunning')) {
         const roundDuration = data['duration'];
         const startTime = (data['start_time'] + clockOffset) * 1000;
-
-        sessionStorage.setItem('Duration', roundDuration);
-        sessionStorage.setItem('StartTime', startTime);
-        sessionStorage.setItem('timerRunning', 'true');
 
         startCountdown(roundDuration, startTime);
       }
@@ -204,7 +196,7 @@
 
       gameSocket.send(
         JSON.stringify({
-          action: 'start_round',
+          action: 'start_timer',
         }),
       );
 

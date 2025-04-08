@@ -118,8 +118,28 @@
       }
     } else if (data.action === 'sync_time') {
       // Offset the difference (server_time - clientTime)
-      const clientTime = Date.now() / 1000;
-      clockOffset = data.server_time - clientTime;
+      duration = data['duration'];
+      currentPhase = data['phase'];
+      server_time = data['server_time'];
+
+      const initialClientTime = Date.now() / 1000;
+      clockOffset = server_time - initialClientTime;
+
+      const currentClientTime = Date.now() / 1000;
+      const currentServerTime = currentClientTime + clockOffset;
+      const elapsedTime = currentServerTime - server_time;
+      const remainingTime = Math.max(duration - elapsedTime, 0);
+
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+
+      // sessionStorage.removeItem('Duration');
+      // sessionStorage.removeItem('StartTime');
+      // sessionStorage.removeItem('timerRunning');
+
+      startCountdown(remainingTime, server_time * 1000);
     }
   };
 
@@ -127,11 +147,7 @@
     let card = document.getElementById(card_id);
     let isChosen = card.dataset.isChosen;
 
-    if (
-      '{{current_player.leader}}' != 'True' &&
-      sessionStorage.getItem('timerRunning') &&
-      currentPhase === 'round'
-    ) {
+    if ('{{current_player.leader}}' != 'True' && currentPhase === 'round') {
       if (isChosen === 'true') {
         card.style.border = '';
         card.dataset.isChosen = 'false';
@@ -159,14 +175,14 @@
       };
     }
 
-    if (sessionStorage.getItem('timerRunning')) {
-      const storedDuration = sessionStorage.getItem('Duration');
-      const storedStartTime = sessionStorage.getItem('StartTime');
+    // if (sessionStorage.getItem('timerRunning')) {
+    //   const storedDuration = sessionStorage.getItem('Duration');
+    //   const storedStartTime = sessionStorage.getItem('StartTime');
 
-      if (storedDuration && storedStartTime) {
-        startCountdown(Number(storedDuration), Number(storedStartTime));
-      }
-    }
+    //   if (storedDuration && storedStartTime) {
+    //     startCountdown(Number(storedDuration), Number(storedStartTime));
+    //   }
+    // }
   });
 
   function submitHintWord(event) {
@@ -190,9 +206,9 @@
         timerInterval = null;
       }
 
-      sessionStorage.removeItem('Duration');
-      sessionStorage.removeItem('StartTime');
-      sessionStorage.removeItem('timerRunning');
+      // sessionStorage.removeItem('Duration');
+      // sessionStorage.removeItem('StartTime');
+      // sessionStorage.removeItem('timerRunning');
 
       gameSocket.send(
         JSON.stringify({
@@ -218,9 +234,9 @@
         clearInterval(timerInterval);
         timerDisplay.textContent = "Time's up!";
 
-        sessionStorage.removeItem('Duration');
-        sessionStorage.removeItem('StartTime');
-        sessionStorage.removeItem('timerRunning');
+        // sessionStorage.removeItem('Duration');
+        // sessionStorage.removeItem('StartTime');
+        // sessionStorage.removeItem('timerRunning');
         // add logic after round ends(counting cards, new round)
 
         gameSocket.send(

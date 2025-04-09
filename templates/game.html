@@ -63,6 +63,10 @@
   let timerInterval = null;
   let currentPhase = 'hint';
 
+  let hintNum = null;
+  let hintWord = null;
+  let chosenCount = 0;
+
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
   };
@@ -95,7 +99,9 @@
       }
     } else if (data.action === 'hint_display') {
       hintWord = data['hint_word'];
-      hintNum = data['hint_num'];
+      hintNum = Number(data['hint_num']);
+
+      chosenCount = 0;
 
       document.getElementById(
         'hintDisplay',
@@ -139,13 +145,22 @@
     let card = document.getElementById(card_id);
     let isChosen = card.dataset.isChosen;
 
+    console.log(chosenCount, hintNum);
+
     if ('{{current_player.leader}}' != 'True' && currentPhase === 'round') {
       if (isChosen === 'true') {
         card.style.border = '';
         card.dataset.isChosen = 'false';
+        chosenCount -= 1;
       } else {
+        if (chosenCount >= hintNum + 1) {
+          alert(`You can only choose ${hintNum} cards.`);
+          return;
+        }
+
         card.style.border = '2px solid yellow';
         card.dataset.isChosen = 'true';
+        chosenCount += 1;
       }
 
       gameSocket.send(

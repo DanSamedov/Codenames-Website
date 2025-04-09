@@ -11,8 +11,8 @@ class GameConsumer(WebsocketConsumer):
         start_time = int(time.time())
         cache.set(f"game_{self.game_id}_phase", {
             'phase': phase,
+            'duration': duration,
             'start_time': start_time,
-            'duration': duration
         }, timeout=duration + 5)
 
 
@@ -41,9 +41,7 @@ class GameConsumer(WebsocketConsumer):
         )
         
         game_phase = self.get_phase()
-        # synchronize timer time with server
-        
-        # self.hint_phase()
+
         if not game_phase and  self.username == Player.objects.get(game=self.game_id, creator=True).username:
             self.set_phase("hint", 10)
             self.start_phase_cycle()
@@ -87,24 +85,20 @@ class GameConsumer(WebsocketConsumer):
 
             self.hint_receive(hint_word, hint_num)
 
-            # if game_phase["phase"] == 'round':
-            #         self.set_phase("hint", 10)
-            # else:
-            #     self.set_phase("round", 20)
-            # self.start_phase_cycle()
-
         if data["action"] == "start_timer":
             now = int(time.time())
 
-            # Only start new phase if the old one has ended
-            if now >= game_phase["start_time"] + game_phase["duration"]:
+            is_timer_cycle = data["type"] == "timer_cycle"
+            phase_end_time = game_phase["start_time"] + game_phase["duration"]
 
-                if game_phase["phase"] == 'round':
-                    self.set_phase("hint", 10)
-                else:
-                    self.set_phase("round", 20)
-                self.start_phase_cycle()
+            if is_timer_cycle and now < phase_end_time:
+                return
 
+            next_phase = "hint" if game_phase["phase"] == "round" else "round"
+            duration = 10 if next_phase == "hint" else 20
+
+            self.set_phase(next_phase, duration)
+            self.start_phase_cycle()
 
     def card_choice(self, username, card_id, card_status):
          async_to_sync(self.channel_layer.group_send)(
@@ -160,7 +154,7 @@ class GameConsumer(WebsocketConsumer):
                     "type": "sync_time",
                     "duration": game_phase["duration"],
                     "phase": game_phase["phase"],
-                    "server_time": game_phase["start_time"]
+                    "start_time": game_phase["start_time"]
                 }
             )
     
@@ -197,17 +191,16 @@ class GameConsumer(WebsocketConsumer):
             'hint_num': hint_num
         }))
 
-    # synchronize timer time with server
     def sync_time(self, event):
         duration = event["duration"]
         phase = event["phase"]
-        server_time = event['server_time']
+        start_time = event['start_time']
 
         self.send(text_data=json.dumps({
             "action": "sync_time",
             "duration": duration,
             "phase": phase,
-            "server_time": server_time
+            "start_time": start_time
         }))
 
     #start round

@@ -102,44 +102,36 @@
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
     } else if (data.action === 'round_start') {
       currentPhase = 'round';
-      if (!sessionStorage.getItem('timerRunning')) {
-        const roundDuration = data['duration'];
-        const startTime = (data['start_time'] + clockOffset) * 1000;
+      const roundDuration = data['duration'];
+      const startTime = (data['start_time'] + clockOffset) * 1000;
 
-        startCountdown(roundDuration, startTime);
-      }
+      startCountdown(roundDuration, startTime, 'timer_cycle');
     } else if (data.action === 'hint_timer_start') {
       currentPhase = 'hint';
-      if (!sessionStorage.getItem('timerRunning')) {
-        const roundDuration = data['duration'];
-        const startTime = (data['start_time'] + clockOffset) * 1000;
+      const roundDuration = data['duration'];
+      const startTime = (data['start_time'] + clockOffset) * 1000;
 
-        startCountdown(roundDuration, startTime);
-      }
+      startCountdown(roundDuration, startTime, 'timer_cycle');
     } else if (data.action === 'sync_time') {
-      // Offset the difference (server_time - clientTime)
       duration = data['duration'];
       currentPhase = data['phase'];
-      server_time = data['server_time'];
+      startTime = data['start_time'];
 
-      const initialClientTime = Date.now() / 1000;
-      clockOffset = server_time - initialClientTime;
+      const clientTimeAtSync = Date.now() / 1000;
+      const clockOffset = startTime - clientTimeAtSync;
 
-      const currentClientTime = Date.now() / 1000;
-      const currentServerTime = currentClientTime + clockOffset;
-      const elapsedTime = currentServerTime - server_time;
-      const remainingTime = Math.max(duration - elapsedTime, 0);
+      const syncedCurrentTime = Date.now() / 1000 + clockOffset;
+      const passedSeconds = syncedCurrentTime - startTime;
+      const remainingTime = Math.max(duration - passedSeconds, 0);
+
+      console.log(remainingTime);
 
       if (timerInterval) {
         clearInterval(timerInterval);
         timerInterval = null;
       }
 
-      // sessionStorage.removeItem('Duration');
-      // sessionStorage.removeItem('StartTime');
-      // sessionStorage.removeItem('timerRunning');
-
-      startCountdown(remainingTime, server_time * 1000);
+      startCountdown(remainingTime, startTime * 1000, 'sync_time');
     }
   };
 
@@ -174,16 +166,38 @@
         submitHintWord(event);
       };
     }
-
-    // if (sessionStorage.getItem('timerRunning')) {
-    //   const storedDuration = sessionStorage.getItem('Duration');
-    //   const storedStartTime = sessionStorage.getItem('StartTime');
-
-    //   if (storedDuration && storedStartTime) {
-    //     startCountdown(Number(storedDuration), Number(storedStartTime));
-    //   }
-    // }
   });
+
+  function startCountdown(duration, startTime, type) {
+    const timerDisplay = document.getElementById('timer');
+    const hintForm = document.getElementById('hint-form');
+
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+
+    timerInterval = setInterval(() => {
+      const now = Date.now();
+      const timeElapsed = Math.floor((now - startTime) / 1000);
+      const timeRemaining = duration - timeElapsed;
+
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerDisplay.textContent = "Time's up!";
+
+        gameSocket.send(
+          JSON.stringify({
+            action: 'start_timer',
+            type: 'timer_cycle',
+          }),
+        );
+      } else {
+        timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
+      }
+    }, 1000);
+  }
 
   function submitHintWord(event) {
     event.preventDefault();
@@ -206,46 +220,15 @@
         timerInterval = null;
       }
 
-      // sessionStorage.removeItem('Duration');
-      // sessionStorage.removeItem('StartTime');
-      // sessionStorage.removeItem('timerRunning');
-
       gameSocket.send(
         JSON.stringify({
           action: 'start_timer',
+          type: 'hint_submit',
         }),
       );
 
       document.getElementById('hint-form').reset();
     }
-  }
-
-  function startCountdown(duration, startTime) {
-    const timerDisplay = document.getElementById('timer');
-    const hintForm = document.getElementById('hint-form');
-
-    timerInterval = setInterval(() => {
-      const now = Date.now();
-      const timeElapsed = Math.floor((now - startTime) / 1000);
-      const timeRemaining = duration - timeElapsed;
-
-      timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
-      if (timeRemaining <= 0) {
-        clearInterval(timerInterval);
-        timerDisplay.textContent = "Time's up!";
-
-        // sessionStorage.removeItem('Duration');
-        // sessionStorage.removeItem('StartTime');
-        // sessionStorage.removeItem('timerRunning');
-        // add logic after round ends(counting cards, new round)
-
-        gameSocket.send(
-          JSON.stringify({
-            action: 'start_timer',
-          }),
-        );
-      }
-    }, 1000);
   }
 </script>
 {% endblock %}

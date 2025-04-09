@@ -4,8 +4,17 @@ from game.models import Hint
 def add_hint(game, team, hint_word, hint_num):
     hint_obj, created = Hint.objects.get_or_create(game=game)
 
-    hint_obj.hints[team].append({"word": hint_word, "num": hint_num})
-
+    team_hints = hint_obj.hints.get(team, [])
+    
+    new_clue_id = len(team_hints) + 1
+    
+    team_hints.append({
+        "word": hint_word,
+        "num": hint_num,
+        "clue_id": new_clue_id
+    })
+    
+    hint_obj.hints[team] = team_hints
     hint_obj.save()
 
 

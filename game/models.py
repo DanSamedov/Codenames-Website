@@ -29,3 +29,12 @@ class Hint(models.Model):
 
     def __str__(self):
         return f"Game {self.game.id} - Hints"
+
+
+class Guess(models.Model):
+    game = models.ForeignKey('room.Game', on_delete=models.CASCADE)
+    hint = models.ForeignKey('game.Hint', on_delete=models.CASCADE)
+    guess = models.JSONField(default=list)
+
+    def __str__(self):
+        return f"Game {self.game.id} - Guesses"

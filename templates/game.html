@@ -63,7 +63,7 @@
   let timerInterval = null;
   let currentPhase = 'hint';
 
-  let hintNum = null;
+  let hintNum = 0;
   let hintWord = null;
   let chosenCount = 0;
 
@@ -100,8 +100,6 @@
     } else if (data.action === 'hint_display') {
       hintWord = data['hint_word'];
       hintNum = Number(data['hint_num']);
-
-      chosenCount = 0;
 
       document.getElementById(
         'hintDisplay',
@@ -198,7 +196,9 @@
         timerInterval = null;
         timerDisplay.textContent = "Time's up!";
 
-        revealGuessedCards();
+        if (currentPhase === 'round') {
+          revealGuessedCards();
+        }
 
         gameSocket.send(
           JSON.stringify({
@@ -245,13 +245,34 @@
   }
 
   function revealGuessedCards() {
+    //get guessed cards
     const pickedCards = document.querySelectorAll('[data-is-chosen="true"]');
+    const pickedCardIds = Array.from(pickedCards).map(card => card.id);
+
+    // send picked cards to the backend
+    gameSocket.send(
+      JSON.stringify({
+        action: 'picked_cards',
+        pickedCards: pickedCardIds,
+      }),
+    );
+
+    //reset card_choice parameters
+    chosenCount = 0;
+    hintWord = null;
+    hintNum = 0;
+
+    console.log(pickedCards);
+
+    //display chosen cards
     pickedCards.forEach(card => {
       card.onclick = null;
+      card.dataset.isChosen = 'guessed';
+
       card.style.backgroundColor = 'grey';
       card.style.border = '';
       if (card.dataset.color === 'Neutral') card.style.color = 'white';
-      card.style.color = card.dataset.color;
+      else card.style.color = card.dataset.color;
     });
   }
 </script>

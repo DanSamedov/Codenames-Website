@@ -3,6 +3,7 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 from room.models import Player, Game
 from game.utils.hints_logic import add_hint
+from game.utils.guesses_logic import add_guess
 from django.core.cache import cache
 
 
@@ -60,9 +61,13 @@ class GameConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
 
+        if not hasattr(self, 'last_hint_id'):
+            self.last_hint_id = None
+
         username = self.scope["session"].get("username")
+
         if not username:
-            self.send(text_data=json.dumps({"error": "User not authenticated"}))
+            self.send(text_data=json.dumps({"error": "User not authenticated or no team assigned"}))
             return
         
         game_phase = self.get_phase()
@@ -81,9 +86,18 @@ class GameConsumer(WebsocketConsumer):
             hint_num = data["hintNum"]
             leader_team = data["leaderTeam"]
 
-            add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
+            hint_id = add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
+
+            self.last_hint_id = hint_id
 
             self.hint_receive(hint_word, hint_num)
+
+        if data["action"] == "picked_cards":
+            picked_cards = data["pickedCards"]
+            team = Player.objects.get(game=self.game_id, username=username).team
+
+            for picked_card in picked_cards:
+                add_guess(self.game_id, picked_card, team, self.last_hint_id)
 
         if data["action"] == "start_timer":
             now = int(time.time())

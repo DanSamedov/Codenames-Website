@@ -33,8 +33,10 @@ class Hint(models.Model):
 
 class Guess(models.Model):
     game = models.ForeignKey('room.Game', on_delete=models.CASCADE)
-    team = models.CharField(max_length=4, choices=[("Blue", "Blue"), ("Red", "Red")], null=False, blank=False)
-    guess = models.JSONField(default=list)
+    team = models.CharField(max_length=4, choices=[("Blue", "Blue"), ("Red", "Red")])
+    guess = models.CharField(max_length=255, null=True, blank=True, default="")
+    hint = models.ForeignKey('Hint', on_delete=models.SET_NULL, null=True)
+    clue_id = models.CharField(max_length=255, null=True, blank=True, default="")
 
     class Meta:
         indexes = [
@@ -42,4 +44,5 @@ class Guess(models.Model):
         ]
 
     def __str__(self):
-        return f"Game {self.game.id} - Guesses"
+        return f"Game: {self.game.id} - Clue id: {self.clue_id} - Team: {self.team}"
+    

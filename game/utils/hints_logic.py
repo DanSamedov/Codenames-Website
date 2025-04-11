@@ -3,9 +3,7 @@ from game.models import Hint
 from django.db import transaction
 
 
-def add_hint(game_id, team, hint_word, hint_num):
-    game = Game.objects.get(id=game_id)
-    
+def add_hint(game, team, hint_word, hint_num):    
     return Hint.objects.create(
         game=game,
         team=team,

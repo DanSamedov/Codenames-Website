@@ -1,18 +1,17 @@
 from game.models import Guess, Hint
 from room.models import Game
+from django.db import transaction
 
-def add_guess(game_id, guess, team, ):
-    game = Game.objects.get(id=game_id)
-    hint = Hint.objects.get(game=game)
+def add_guess(guesses, hint):
+    if not hint:
+        raise ValueError("Cannot create guesses without a valid hint")
+    
+    guesses_to_create = [
+        Guess(hint=hint, guess=guess)
+        for guess in guesses]
 
     try:
-        guess_obj = Guess.objects.create(
-            game=game,
-            team=team,
-            guess=guess,
-            hint=hint,
-        )
-
-        return guess_obj
-    except:
-        return None
+        with transaction.atomic():
+            return Guess.objects.bulk_create(guesses_to_create)
+    except Exception as e:
+        raise Exception(f"Failed to create guesses: {str(e)}")

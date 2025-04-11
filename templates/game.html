@@ -4,16 +4,16 @@
 <p>Your team: {{ current_player.team }}</p>
 
 <ul id="cards">
-  {% for card in cards %} {% for word in card.words %}
+  {% for card in cards %}
+  <!-- prettier-ignore -->
   <li
-    id="card-{{ word.word }}"
-    data-color="{{ word.color }}"
+    id="card-{{ card.word }}"
+    data-color="{{ card.color }}"
     data-is-chosen="false"
-    onclick="card_choice(this.id)"
-  >
-    {{ word.word }}
+    onclick="card_choice(this.id)">
+    {{ card.word }}
   </li>
-  {% endfor %} {% endfor %}
+  {% endfor %}
 </ul>
 {% if current_player.leader %}
 <form id="hint-form" class="">

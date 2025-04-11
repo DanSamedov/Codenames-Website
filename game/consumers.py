@@ -5,7 +5,7 @@ from room.models import Player, Game
 from game.utils.hints_logic import add_hint
 from game.utils.guesses_logic import add_guess
 from django.core.cache import cache
-
+from game.utils.hints_logic import get_last_hint
 
 class GameConsumer(WebsocketConsumer):
     def set_phase(self, phase, duration):
@@ -61,9 +61,6 @@ class GameConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
 
-        if not hasattr(self, 'last_clue_id'):
-            self.last_clue_id = None
-
         username = self.scope["session"].get("username")
 
         if not username:
@@ -86,9 +83,7 @@ class GameConsumer(WebsocketConsumer):
             hint_num = data["hintNum"]
             leader_team = data["leaderTeam"]
 
-            clue_id = add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
-
-            self.last_clue_id = clue_id
+            add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
 
             self.hint_receive(hint_word, hint_num)
 
@@ -96,8 +91,11 @@ class GameConsumer(WebsocketConsumer):
             picked_cards = data["pickedCards"]
             team = Player.objects.get(game=self.game_id, username=username).team
 
-            for picked_card in picked_cards:
-                add_guess(self.game_id, picked_card, team, self.last_clue_id)
+            hint = get_last_hint(self.game_id, team)
+            if not hint:
+                return
+
+            add_guess(picked_cards, hint)
 
         if data["action"] == "start_timer":
             now = int(time.time())

@@ -21,19 +21,18 @@ class Card(models.Model):
 class Hint(models.Model):
     game = models.ForeignKey('room.Game', on_delete=models.CASCADE)
     team = models.CharField(max_length=4, choices=[("Blue", "Blue"), ("Red", "Red")])
-    word = models.CharField(max_length=255, null=True, blank=True, default="")
-    num = models.CharField(max_length=255, null=True, blank=True, default="")
+    word = models.CharField(max_length=255)
+    num = models.CharField(max_length=255)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['-created_at']
-
         indexes = [
-            models.Index(fields=['game', 'team']),
+            models.Index(fields=['game', 'team', '-created_at']),
         ]
 
     def __str__(self):
-        return f"Game {self.game.id} - {self.team} Hint"
+        return f"{self.team} team hint: {self.word} (Game {self.game.id})"
 
 
 class Guess(models.Model):

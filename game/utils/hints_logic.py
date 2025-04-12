@@ -1,6 +1,5 @@
 from room.models import Game
 from game.models import Hint 
-from django.db import transaction
 
 
 def add_hint(game, team, hint_word, hint_num):    
@@ -11,11 +10,11 @@ def add_hint(game, team, hint_word, hint_num):
         num=hint_num
     )
 
-def get_last_hint(game_id, team):
+
+def get_last_hint(game_id):
     try:
         return Hint.objects.filter(
             game_id=game_id, 
-            team=team
         ).latest('created_at')
     except Hint.DoesNotExist:
         return None

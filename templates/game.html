@@ -59,6 +59,16 @@
 
   let currentUser = '{{ current_player.username }}';
 
+  // window.gameState = {
+  //   clockOffset: 0,
+  //   timerInterval: null,
+  //   phase: 'hint',
+  //   hintNum: 0,
+  //   hintWord: null,
+  //   chosenCount: 0,
+  //   alreadyProcessed: false,
+  // };
+
   let clockOffset = 0;
   let timerInterval = null;
   let currentPhase = 'hint';
@@ -76,9 +86,9 @@
 
     if (data.action === 'player_join') {
       var leader_list = data['leader_list'];
+      var cards = document.querySelectorAll("[id^='card-']");
 
       if (leader_list.includes(currentUser)) {
-        var cards = document.querySelectorAll("[id^='card-']");
         cards.forEach(card => {
           card.style.backgroundColor = card.dataset.color;
         });
@@ -134,6 +144,8 @@
       }
 
       startCountdown(remainingTime, startTime * 1000, 'sync_time');
+    } else if (data.action == 'reveal_guessed_cards') {
+      revealGuessedCards();
     }
   };
 
@@ -186,19 +198,15 @@
       timerInterval = null;
     }
 
+    const endTime = startTime + duration * 1000;
     timerInterval = setInterval(() => {
       const now = Date.now();
-      const timeElapsed = Math.floor((now - startTime) / 1000);
-      const timeRemaining = duration - timeElapsed;
+      const timeRemaining = Math.max(0, Math.floor((endTime - now) / 1000));
 
       if (timeRemaining <= 0) {
         clearInterval(timerInterval);
         timerInterval = null;
         timerDisplay.textContent = "Time's up!";
-
-        if (currentPhase === 'round') {
-          revealGuessedCards();
-        }
 
         gameSocket.send(
           JSON.stringify({
@@ -207,7 +215,7 @@
           }),
         );
       } else {
-        timerDisplay.textContent = 'Time remaining: ' + timeRemaining + 's';
+        timerDisplay.textContent = `Time remaining: ${timeRemaining}s`;
       }
     }, 1000);
   }
@@ -215,28 +223,20 @@
   function submitHintWord(event) {
     event.preventDefault();
     if (currentPhase === 'hint') {
-      let hintWord = document.getElementById('hintWordInput').value;
-      let hintNum = document.getElementById('hintNumInput').value;
-      let leaderTeam = '{{ current_player.team }}';
+      const hintWordInput = document.getElementById('hintWordInput');
+      const hintNumInput = document.getElementById('hintNumInput');
 
-      gameSocket.send(
-        JSON.stringify({
-          action: 'hint_submit',
-          hintWord: hintWord,
-          hintNum: hintNum,
-          leaderTeam: leaderTeam,
-        }),
-      );
-
-      if (timerInterval) {
-        clearInterval(timerInterval);
-        timerInterval = null;
+      if (!hintWordInput.value || !hintNumInput.value) {
+        alert('Please fill in both hint fields');
+        return;
       }
 
       gameSocket.send(
         JSON.stringify({
-          action: 'start_timer',
-          type: 'hint_submit',
+          action: 'hint_submit',
+          hintWord: hintWordInput.value,
+          hintNum: parseInt(hintNumInput.value),
+          leaderTeam: '{{ current_player.team }}',
         }),
       );
 

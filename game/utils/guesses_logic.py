@@ -1,11 +1,11 @@
-from game.models import Guess, Hint
-from room.models import Game
+from game.models import Guess
 from django.db import transaction
+
 
 def add_guess(guesses, hint):
     if not hint:
         raise ValueError("Cannot create guesses without a valid hint")
-    
+
     guesses_to_create = [
         Guess(hint=hint, guess=guess)
         for guess in guesses]

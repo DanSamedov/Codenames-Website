@@ -1,11 +1,13 @@
-import json, time
+import json
+import time
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 from room.models import Player, Game
-from game.utils.hints_logic import add_hint
+from game.utils.hints_logic import add_hint, get_last_hint
 from game.utils.guesses_logic import add_guess
 from django.core.cache import cache
-from game.utils.hints_logic import get_last_hint
+import threading
+
 
 class GameConsumer(WebsocketConsumer):
     def set_phase(self, phase, duration):
@@ -21,6 +23,51 @@ class GameConsumer(WebsocketConsumer):
         return cache.get(f"game_{self.game_id}_phase")
 
 
+    def schedule_phase_transition(self, phase):
+        current_phase = self.get_phase()
+        if not current_phase or current_phase['phase'] != phase:
+            return
+
+        lock_key = f"game_{self.game_id}_scheduler_{phase}"
+        lock_acquired = cache.add(lock_key, True, timeout=current_phase['duration'] + 2)
+        
+        if not lock_acquired:
+            return
+
+        expected_start = current_phase['start_time']
+        expected_duration = current_phase['duration']
+
+        def transition():
+            try:
+                now = time.time()
+                remaining = (expected_start + expected_duration) - now
+                time.sleep(max(remaining, 1))
+                
+                current_phase_after = self.get_phase()
+                valid = (
+                    current_phase_after and 
+                    current_phase_after['phase'] == phase and
+                    current_phase_after['start_time'] == expected_start
+                )
+                
+                if valid:
+
+                    if phase == "round":
+                         async_to_sync(self.channel_layer.group_send)(
+                            self.game_group_name,
+                            {
+                                "type": "reveal_cards"
+                            })
+                         
+                    next_phase = "hint" if phase == "round" else "round"
+                    next_duration = 10 if next_phase == "hint" else 20
+                    self.set_phase(next_phase, next_duration)
+                    self.start_phase_cycle()
+            finally:
+                cache.delete(lock_key)
+        threading.Thread(target=transition, daemon=True).start()
+
+
     def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['id']
         self.game_group_name = f'game_{self.game_id}'
@@ -30,7 +77,6 @@ class GameConsumer(WebsocketConsumer):
             self.game_group_name,
             self.channel_name
         )
-
         self.accept()
 
         async_to_sync(self.channel_layer.group_send)(
@@ -42,13 +88,26 @@ class GameConsumer(WebsocketConsumer):
         )
         
         game_phase = self.get_phase()
+        creator_username = Player.objects.get(game=self.game_id, creator=True).username
 
-        if not game_phase and  self.username == Player.objects.get(game=self.game_id, creator=True).username:
+        if not game_phase and self.username == creator_username:
             self.set_phase("hint", 10)
             self.start_phase_cycle()
+        elif game_phase:
+            self.handle_existing_phase(game_phase)
 
-        if game_phase:
-            self.sync(game_phase)
+
+    def handle_existing_phase(self, game_phase):
+        now = int(time.time())
+        end_time = game_phase['start_time'] + game_phase['duration']
+
+        if now >= end_time:
+            next_phase = "hint" if game_phase['phase'] == "round" else "round"
+            self.set_phase(next_phase, 10 if next_phase == "hint" else 20)
+            self.start_phase_cycle()
+        else:
+            self.schedule_phase_transition(game_phase['phase'])
+        self.sync(game_phase)
 
 
     def disconnect(self, close_code):
@@ -79,38 +138,29 @@ class GameConsumer(WebsocketConsumer):
             self.card_choice(username, card_id, card_status)
 
         if data["action"] == "hint_submit" and game_phase["phase"] == "hint":
-            hint_word = data["hintWord"]
-            hint_num = data["hintNum"]
-            leader_team = data["leaderTeam"]
-
-            add_hint(Game.objects.get(id=self.game_id), leader_team, hint_word, hint_num)
-
-            self.hint_receive(hint_word, hint_num)
+            self.handle_hint_submission(data)
 
         if data["action"] == "picked_cards":
             picked_cards = data["pickedCards"]
-            team = Player.objects.get(game=self.game_id, username=username).team
 
-            hint = get_last_hint(self.game_id, team)
+            hint = get_last_hint(self.game_id)
             if not hint:
                 return
 
             add_guess(picked_cards, hint)
 
-        if data["action"] == "start_timer":
-            now = int(time.time())
 
-            is_timer_cycle = data["type"] == "timer_cycle"
-            phase_end_time = game_phase["start_time"] + game_phase["duration"]
-
-            if is_timer_cycle and now < phase_end_time:
-                return
-
-            next_phase = "hint" if game_phase["phase"] == "round" else "round"
-            duration = 10 if next_phase == "hint" else 20
-
-            self.set_phase(next_phase, duration)
-            self.start_phase_cycle()
+    def handle_hint_submission(self, data):
+        self.set_phase("round", 20)
+        add_hint(
+            Game.objects.get(id=self.game_id),
+            data["leaderTeam"],
+            data["hintWord"],
+            data["hintNum"]
+        )
+        self.hint_receive(data["hintWord"], data["hintNum"])
+        self.start_phase_cycle()
+    
 
     def card_choice(self, username, card_id, card_status):
          async_to_sync(self.channel_layer.group_send)(
@@ -157,6 +207,8 @@ class GameConsumer(WebsocketConsumer):
                     "start_time": game_phase["start_time"],
                 }
             )
+
+        self.schedule_phase_transition(game_phase["phase"])
 
 
     def sync(self, game_phase):
@@ -235,4 +287,10 @@ class GameConsumer(WebsocketConsumer):
             "action": "hint_timer_start",
             "duration": duration,
             "start_time": start_time
+        }))
+
+
+    def reveal_cards(self, event):
+        self.send(text_data=json.dumps({
+            "action": "reveal_guessed_cards"
         }))

@@ -114,13 +114,13 @@
       document.getElementById(
         'hintDisplay',
       ).innerText = `Hint: ${hintWord} \n Number of words: ${hintNum}`;
-    } else if (data.action === 'round_start') {
+    } else if (data.action === 'round_phase_start') {
       currentPhase = 'round';
       const roundDuration = data['duration'];
       const startTime = (data['start_time'] + clockOffset) * 1000;
 
       startCountdown(roundDuration, startTime, 'timer_cycle');
-    } else if (data.action === 'hint_timer_start') {
+    } else if (data.action === 'hint_phase_start') {
       currentPhase = 'hint';
       const roundDuration = data['duration'];
       const startTime = (data['start_time'] + clockOffset) * 1000;

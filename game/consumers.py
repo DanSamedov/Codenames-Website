@@ -22,8 +22,8 @@ class GameConsumer(WebsocketConsumer):
         self.accept()
 
         self.event_dispatcher = GameEventDispatcher(self.channel_layer, self.game_group_name, self.send)
-        self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher)
-        self.event_processor = GameEventProcessor(self.game_id, self.phase_manager, self.event_dispatcher.hint_receive)
+        self.event_processor = GameEventProcessor(self.game_id)
+        self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher, self.event_processor)
 
         async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
@@ -72,10 +72,11 @@ class GameConsumer(WebsocketConsumer):
                 card_status=data.get("card_status")
             )
         elif action == "hint_submit" and game_phase["phase"] == "hint_phase_start":
-            self.event_processor.handle_hint_submission(data)
+            self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
+            self.event_processor.capture_hint(data)
         elif action == "picked_cards":
-            self.event_processor.save_picked_cards(data)
-    
+            self.event_processor.capture_picks(data)
+
     def player_join(self, event):
         self.event_dispatcher.player_join(event)
 
@@ -99,12 +100,13 @@ class GameConsumer(WebsocketConsumer):
 
 
 class PhaseManager:
-    def __init__(self, game_id, channel_layer, game_group_name, event_dispatcher):
+    def __init__(self, game_id, channel_layer, game_group_name, event_dispatcher, event_processor):
         self.game_id = game_id
+        self.cache_prefix = f"game_{self.game_id}"
         self.channel_layer = channel_layer
         self.game_group_name = game_group_name
-        self.cache_prefix = f"game_{self.game_id}"
         self.event_dispatcher = event_dispatcher
+        self.event_processor = event_processor
 
 
     def set_phase(self, phase, duration):
@@ -115,8 +117,10 @@ class PhaseManager:
             'start_time': start_time,
         }, timeout=duration + 5)
 
+
     def get_phase(self):
         return cache.get(f"{self.cache_prefix}_phase")
+
 
     def schedule_phase_transition(self, phase):
         current_phase = self.get_phase()
@@ -145,16 +149,22 @@ class PhaseManager:
                 )
                 
                 if valid:
-                    if phase == "round_phase_start":
-                        self.event_dispatcher.send_reveal_cards()
+                    if phase == "hint_phase_start":
+                        self.set_phase("round_phase_start", 20)
+                        self.start_phase_cycle()
+                        self.event_processor.save_submitted_hints()
 
-                    next_phase = "hint_phase_start" if phase == "round_phase_start" else "round_phase_start"
-                    next_duration = 10 if next_phase == "hint_phase_start" else 20
-                    self.set_phase(next_phase, next_duration)
-                    self.start_phase_cycle()
+                    elif phase == "round_phase_start":
+                        self.event_dispatcher.send_reveal_cards()
+                        self.set_phase("hint_phase_start", 10)
+                        self.start_phase_cycle()
+                        self.event_processor.save_picked_cards()
+
+
             finally:
                 cache.delete(lock_key)
         threading.Thread(target=transition, daemon=True).start()
+
 
     def handle_existing_phase(self):
         phase = self.get_phase()
@@ -169,6 +179,7 @@ class PhaseManager:
             self.start_phase_cycle()
         else:
             self.schedule_phase_transition(phase['phase'])
+
 
     def start_phase_cycle(self):
         game_phase = self.get_phase()
@@ -299,27 +310,45 @@ class GameEventDispatcher:
 
 
 class GameEventProcessor:
-    def __init__(self, game_id, phase_manager, hint_receive_callback):
+    def __init__(self, game_id):
         self.game_id = game_id
-        self.phase_manager = phase_manager
-        self.hint_receive = hint_receive_callback
+        self._stored_hint = None
+        self._stored_picks = None
 
 
-    def handle_hint_submission(self, data):
-        self.phase_manager.set_phase("round_phase_start", 20)
+    def capture_hint(self, data):
+        if self._stored_hint is None:
+            self._stored_hint = data
+
+
+    def save_submitted_hints(self):
+        data = self._stored_hint
+
+        if not data:
+            return
+        
         add_hint(
             Game.objects.get(id=self.game_id),
             data["leaderTeam"],
             data["hintWord"],
             data["hintNum"]
         )
-        self.hint_receive(data["hintWord"], data["hintNum"])
-        self.phase_manager.start_phase_cycle()
+        self._stored_hint = None
 
 
-    def save_picked_cards(self, data):
+    def capture_picks(self, data):
+        if self._stored_picks is None:
+            self._stored_picks = data
+
+    
+    def save_picked_cards(self):
+        data = self._stored_picks
+
+        if not data:
+            return
+        
         picked_cards = data["pickedCards"]
         hint = get_last_hint(self.game_id)
-        if not hint:
-            return
-        add_guess(picked_cards, hint)
+        if hint and picked_cards:
+            add_guess(picked_cards, hint)
+        self._stored_picks = None

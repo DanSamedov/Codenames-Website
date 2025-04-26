@@ -1,8 +1,9 @@
 import json
 import time
 import threading
+import math
 from channels.generic.websocket import WebsocketConsumer
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from room.models import Player, Game
 from game.utils.hints_logic import add_hint, get_last_hint
 from game.utils.guesses_logic import add_guess
@@ -74,6 +75,8 @@ class GameConsumer(WebsocketConsumer):
         elif action == "hint_submit" and game_phase["phase"] == "hint_phase_start":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
             self.event_processor.capture_hint(data)
+            self.phase_manager.set_phase("round_phase_start", 20)
+            self.phase_manager.start_phase_cycle()
         elif action == "picked_cards":
             self.event_processor.capture_picks(data)
 
@@ -89,11 +92,8 @@ class GameConsumer(WebsocketConsumer):
     def sync_time(self, event):
         self.event_dispatcher.sync_time(event)
 
-    def round_phase_start(self, event):
-        self.event_dispatcher.round_phase_start(event)
-
-    def hint_phase_start(self, event):
-        self.event_dispatcher.hint_phase_start(event)
+    def phase_event(self, event):
+        self.event_dispatcher.phase_event(event)
 
     def reveal_cards(self, event):
         self.event_dispatcher.reveal_cards(event)
@@ -111,11 +111,15 @@ class PhaseManager:
 
     def set_phase(self, phase, duration):
         start_time = int(time.time())
-        cache.set(f"{self.cache_prefix}_phase", {
-            'phase': phase,
-            'duration': duration,
-            'start_time': start_time,
-        }, timeout=duration + 5)
+        cache.set(
+            f"{self.cache_prefix}_phase",
+            {
+                'phase': phase,
+                'duration': duration,
+                'start_time': start_time,
+            },
+            timeout=duration
+        )
 
 
     def get_phase(self):
@@ -139,7 +143,8 @@ class PhaseManager:
             try:
                 now = time.time()
                 remaining = (expected_start + expected_duration) - now
-                time.sleep(max(remaining, 1))
+                if remaining > 0:
+                    time.sleep(remaining)
                 
                 current_phase_after = self.get_phase()
                 valid = (
@@ -151,16 +156,18 @@ class PhaseManager:
                 if valid:
                     if phase == "hint_phase_start":
                         self.set_phase("round_phase_start", 20)
-                        self.start_phase_cycle()
-                        self.event_processor.save_submitted_hints()
-
+                        threading.Thread(
+                            target=self.event_processor.save_submitted_hints,
+                            daemon=True
+                        ).start()
                     elif phase == "round_phase_start":
                         self.event_dispatcher.send_reveal_cards()
                         self.set_phase("hint_phase_start", 10)
-                        self.start_phase_cycle()
-                        self.event_processor.save_picked_cards()
-
-
+                        threading.Thread(
+                            target=self.event_processor.save_picked_cards,
+                            daemon=True
+                        ).start()
+                    self.start_phase_cycle()
             finally:
                 cache.delete(lock_key)
         threading.Thread(target=transition, daemon=True).start()
@@ -235,14 +242,14 @@ class GameEventDispatcher:
 
     def send_phase(self, phase_type, duration, start_time):
         async_to_sync(self.channel_layer.group_send)(
-                self.game_group_name,
-                {
-                    "type": phase_type,
-                    "duration": duration,
-                    "start_time": start_time
-                }
-            )
-
+            self.game_group_name,
+            {
+                "type": "phase_event",
+                "phase": phase_type,
+                "duration": duration,
+                "start_time": start_time,
+            })
+        
 
     def send_reveal_cards(self):
         async_to_sync(self.channel_layer.group_send)(
@@ -287,25 +294,17 @@ class GameEventDispatcher:
         }))
 
 
-    def round_phase_start(self, event):
-        self.send_handler(text_data=json.dumps({
-            "action": "round_phase_start",
-            "duration": event['duration'],
-            "start_time": event['start_time']
-        }))
-
-
-    def hint_phase_start(self, event):
-        self.send_handler(text_data=json.dumps({
-            "action": "hint_phase_start",
-            "duration": event['duration'],
-            "start_time": event['start_time']
-        }))
-
-
     def reveal_cards(self, event):
         self.send_handler(text_data=json.dumps({
             "action": "reveal_guessed_cards"
+        }))
+
+
+    def phase_event(self, event):
+        self.send_handler(text_data=json.dumps({
+            "action": event["phase"],
+            "duration": event["duration"],
+            "start_time": event["start_time"]
         }))
 
 
@@ -343,7 +342,7 @@ class GameEventProcessor:
     
     def save_picked_cards(self):
         data = self._stored_picks
-
+        print(data)
         if not data:
             return
         

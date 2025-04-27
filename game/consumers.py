@@ -36,15 +36,15 @@ class GameConsumer(WebsocketConsumer):
             }
         )
 
-        game_phase_data = self.phase_manager.get_phase()
+        phase = self.phase_manager.get_phase()
         creator_username = Player.objects.get(game=self.game_id, creator=True).username
 
-        if not game_phase_data and self.username == creator_username:
+        if not phase and self.username == creator_username:
             self.phase_manager.set_phase("hint_phase_start", 10)
             self.phase_manager.start_phase_cycle()
-        elif game_phase_data:
+        elif phase:
             self.phase_manager.handle_existing_phase()
-            self.event_dispatcher.sync(game_phase_data)
+            self.event_dispatcher.sync(phase)
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -60,25 +60,26 @@ class GameConsumer(WebsocketConsumer):
             self.send(text_data=json.dumps({"error": "User not authenticated or no team assigned"}))
             return
 
-        game_phase_data = self.phase_manager.get_phase()
-        if not game_phase_data:
+        phase = self.phase_manager.get_phase()
+        phase_name = phase.name
+
+        if not phase:
             self.send(text_data=json.dumps({"error": "No game phase found"}))
             return
 
         action = data.get("action")
-        current_phase = game_phase_data["phase"]
         
-        if action == "card_choice" and current_phase == "round_phase_start":
+        if action == "card_choice" and phase_name == "round_phase_start":
             self.event_dispatcher.card_choice(
                 username, 
                 card_id=data.get("card_id"), 
                 card_status=data.get("card_status")
             )
-        elif action == "hint_submit" and current_phase == "hint_phase_start":
+        elif action == "hint_submit" and phase_name == "hint_phase_start":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
             self.event_processor.capture_hint(data)
+            self.phase_manager.advance_phase()
         elif action == "picked_cards":
-            print(f"recieve{data}")
             self.event_processor.capture_picks(data)
 
     def player_join(self, event):
@@ -148,88 +149,103 @@ class PhaseManager:
         )
         return self.current_phase
 
-    def get_phase(self):
+    def get_phase(self) -> Phase:
         phase_data = cache.get(f"{self.cache_prefix}_phase")
         if not phase_data:
+            self.current_phase = None
             return None
-        
-        if not self.current_phase or self.current_phase.name != phase_data['phase']:
+
+        if (
+            not self.current_phase
+            or self.current_phase.name != phase_data['phase']
+            or self.current_phase.start_time != phase_data['start_time']
+        ):
             self.current_phase = Phase(
                 name=phase_data['phase'],
                 duration=phase_data['duration'],
                 start_time=phase_data['start_time']
             )
-        return phase_data
 
-    def schedule_phase_transition(self, phase_name):
-        current_phase_data = self.get_phase()
-        if not current_phase_data or current_phase_data['phase'] != phase_name:
+        return self.current_phase
+
+
+    def _on_phase_expire(self, phase: Phase):
+        phase_name = phase.name
+        expected_start = phase.start_time
+
+        phase = self.get_phase()
+        if (not phase
+            or phase.name != phase_name
+            or phase.start_time != expected_start):
+            return
+
+        if phase_name == "hint_phase_start":
+            self.set_phase("round_phase_start", 20)
+            threading.Thread(
+                target=self.event_processor.save_submitted_hints,
+                daemon=True
+            ).start()
+        else:
+            self.event_dispatcher.send_reveal_cards()
+            self.set_phase("hint_phase_start", 10)
+            threading.Thread(
+                target=self.event_processor.save_picked_cards,
+                daemon=True
+            ).start()
+
+        self.start_phase_cycle()
+
+    def schedule_phase_transition(self, phase_name: str):
+        phase = self.get_phase()
+        if not phase or phase.name != phase_name:
             return
 
         lock_key = f"{self.cache_prefix}_scheduler_{phase_name}"
-        lock_acquired = cache.add(lock_key, True, timeout=current_phase_data['duration'] + 2)
+        lock_acquired = cache.add(lock_key, True, timeout=phase.duration + 2)
         if not lock_acquired:
             return
-
-        expected_start = current_phase_data['start_time']
         
-        def on_phase_expire(phase):
-            try:
-                current_data = self.get_phase()
-                if not current_data or current_data['phase'] != phase_name or current_data['start_time'] != expected_start:
-                    return
-                
-                if phase_name == "hint_phase_start":
-                    self.set_phase("round_phase_start", 20)
-                    threading.Thread(
-                        target=self.event_processor.save_submitted_hints,
-                        daemon=True
-                    ).start()
-                elif phase_name == "round_phase_start":
-                    self.event_dispatcher.send_reveal_cards()
-                    self.set_phase("hint_phase_start", 10)
-                    threading.Thread(
-                        target=self.event_processor.save_picked_cards,
-                        daemon=True
-                    ).start()
-                self.start_phase_cycle()
-            finally:
-                cache.delete(lock_key)
-
         phase = Phase(
-            name=phase_name,
-            duration=current_phase_data['duration'],
-            start_time=current_phase_data['start_time']
+            name=phase.name,
+            duration=phase.duration,
+            start_time=phase.start_time
         )
-        phase.schedule_transition(on_phase_expire)
+        phase.schedule_transition(self._on_phase_expire)
 
     def handle_existing_phase(self):
-        phase_data = self.get_phase()
-        if not phase_data:
+        phase = self.get_phase()
+        if not phase:
             return "no_phase"
         
         now = time.time()
-        end_time = phase_data['start_time'] + phase_data['duration']
+        end_time = phase.start_time + phase.duration
         
         if now >= end_time:
-            next_phase = "hint_phase_start" if phase_data['phase'] == "round_phase_start" else "round_phase_start"
+            next_phase = "hint_phase_start" if phase.name == "round_phase_start" else "round_phase_start"
             next_duration = 10 if next_phase == "hint_phase_start" else 20
             self.set_phase(next_phase, next_duration)
             self.start_phase_cycle()
         else:
-            self.schedule_phase_transition(phase_data['phase'])
+            self.schedule_phase_transition(phase.name)
 
     def start_phase_cycle(self):
-        phase_data = self.get_phase()
-        if not phase_data:
+        phase = self.get_phase()
+        if not phase:
             return
         
         self.event_dispatcher.send_phase(
-            phase_type=phase_data["phase"],
-            duration=phase_data["duration"],
-            start_time=phase_data["start_time"]
+            phase_type=phase.name,
+            duration=phase.duration,
+            start_time=phase.start_time
         )
-        self.schedule_phase_transition(phase_data["phase"])
+        self.schedule_phase_transition(phase.name)
+    
+    def advance_phase(self):
+        phase = self.current_phase
+
+        if not phase:
+            return
+        self._on_phase_expire(self.current_phase)
 
 
 class GameEventDispatcher:
@@ -259,14 +275,14 @@ class GameEventDispatcher:
             }
         )
 
-    def sync(self, phase_data):
+    def sync(self, phase):
         async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
             {
                 "type": "sync_time",
-                "duration": phase_data["duration"],
-                "phase": phase_data["phase"],
-                "start_time": phase_data["start_time"]
+                "duration": phase.duration,
+                "phase": phase.name,
+                "start_time": phase.start_time
             }
         )
 
@@ -336,7 +352,7 @@ class GameEventProcessor:
         self.game_id = game_id
         self._stored_hint = None
         self._stored_picks = None
-
+        self.picks_received = threading.Event()
 
     def capture_hint(self, data):
         if self._stored_hint is None:
@@ -357,21 +373,20 @@ class GameEventProcessor:
         )
         self._stored_hint = None
 
-
     def capture_picks(self, data):
         if self._stored_picks is None:
             self._stored_picks = data
-        print(f"capture_picks: {self._stored_picks}")
-    
+            self.picks_received.set()    
 
     def save_picked_cards(self):
-        data = self._stored_picks
-        if not data:
+        self.picks_received.wait(timeout=3)
+        
+        if not self._stored_picks:
             return
-        print(f"save_picked_cards: {self._stored_picks}")
 
-        picked_cards = data.get("pickedCards", [])
+        picked_cards = self._stored_picks.get("pickedCards", [])
         hint = get_last_hint(self.game_id)
         if hint and picked_cards:
             add_guess(picked_cards, hint)
         self._stored_picks = None
+        self.picks_received.clear()

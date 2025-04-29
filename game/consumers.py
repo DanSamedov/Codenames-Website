@@ -26,15 +26,7 @@ class GameConsumer(WebsocketConsumer):
         self.event_processor = GameEventProcessor(self.game_id)
         self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher, self.event_processor)
 
-        async_to_sync(self.channel_layer.group_send)(
-            self.game_group_name,
-            {
-                "type": "player_join",
-                "leader_list": list(
-                    Player.objects.filter(game=self.game_id, leader=True).values_list("username", flat=True)
-                )
-            }
-        )
+        self.event_dispatcher.new_player(self.game_id)
 
         phase = self.phase_manager.get_phase()
         creator_username = Player.objects.get(game=self.game_id, creator=True).username
@@ -304,6 +296,17 @@ class GameEventDispatcher:
             }
         )
 
+    def new_player(self, game_id):
+        async_to_sync(self.channel_layer.group_send)(
+                self.game_group_name,
+                {
+                    "type": "player_join",
+                    "leader_list": list(
+                        Player.objects.filter(game=game_id, leader=True).values_list("username", flat=True)
+                    )
+                }
+            )
+    
     def player_join(self, event):
         leader_list = event['leader_list']
         self.send_handler(text_data=json.dumps({

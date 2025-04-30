@@ -5,7 +5,13 @@
 
 <ul id="cards">
   {% for card in cards_list %}
-  <li id="card-{{ card.word }}">{{ card.word }}</li>
+  <li
+    id="card-{{ card.word }}"
+    data-is-chosen="false"
+    onclick="card_choice(this.id)"
+  >
+    {{ card.word }}
+  </li>
   {% endfor %}
 </ul>
 {% if current_player.leader %}
@@ -62,7 +68,7 @@
     });
 
     sessionStorage.setItem(initializedKey, 'true');
-    sessionStorage.setItem(`game_${gameId}_cardDict`, JSON.stringify(cardDict));
+    sessionStorage.setItem(`cardDict_${gameId}`, JSON.stringify(cardDict));
   }
 
   const gameSocket = new WebSocket(
@@ -146,8 +152,6 @@
       }
 
       startCountdown(remainingTime, startTime * 1000, 'sync_time');
-    } else if (data.action == 'reveal_guessed_cards') {
-      revealGuessedCards();
     }
   };
 
@@ -251,56 +255,92 @@
     }
   }
 
-  function revealGuessedCards() {
-    //get guessed cards
-    const pickedCards = document.querySelectorAll('[data-is-chosen="true"]');
-    const pickedCardIds = Array.from(pickedCards).map(card => card.id);
+  // function revealGuessedCards() {
+  //   //get guessed cards
+  //   const pickedCards = document.querySelectorAll('[data-is-chosen="true"]');
+  //   const pickedCardIds = Array.from(pickedCards).map(card => card.id);
 
-    // send picked cards to the backend
-    gameSocket.send(
-      JSON.stringify({
-        action: 'picked_cards',
-        pickedCards: pickedCardIds,
-      }),
-    );
+  //   // send picked cards to the backend
+  //   gameSocket.send(
+  //     JSON.stringify({
+  //       action: 'picked_cards',
+  //       pickedCards: pickedCardIds,
+  //     }),
+  //   );
 
-    //reset card_choice parameters
-    window.gameState.chosenCount = 0;
-    window.gameState.hintWord = null;
-    window.gameState.hintNum = 0;
+  //   //reset card_choice parameters
+  //   window.gameState.chosenCount = 0;
+  //   window.gameState.hintWord = null;
+  //   window.gameState.hintNum = 0;
 
-    console.log(pickedCards);
+  //   console.log(pickedCards);
 
-    //display chosen cards
-    pickedCards.forEach(card => {
-      card.onclick = null;
-      card.dataset.isChosen = 'guessed';
+  //   //display chosen cards
+  //   pickedCards.forEach(card => {
+  //     card.onclick = null;
+  //     card.dataset.isChosen = 'guessed';
 
-      card.style.backgroundColor = 'grey';
-      card.style.border = '';
-      if (card.dataset.color === 'Neutral') card.style.color = 'white';
-      else card.style.color = card.dataset.color;
-    });
-  }
+  //     card.style.backgroundColor = 'grey';
+  //     card.style.border = '';
+  //     if (card.dataset.color === 'Neutral') card.style.color = 'white';
+  //     else card.style.color = card.dataset.color;
+  //   });
+  // }
 
   function initCards(data = {}) {
-    const leader_list = data['leader_list'];
+    const action = data.action || 'init';
+    const leader_list = data.leader_list || [];
     const cards = document.querySelectorAll('[id^="card-"]');
+    const cardDict = JSON.parse(
+      sessionStorage.getItem(`cardDict_${gameId}`) || '{}',
+    );
+    const pickedCardIds = [];
 
-    // cards.forEach(card => {
-    //   if (card.dataset.isChosen === 'guessed') {
-    //     const col = card.dataset.color.toLowerCase();
-    //     card.style.backgroundColor = 'grey';
-    //     card.style.color = col;
-    //     card.onclick = null;
-    //   }
-    // });
+    cards.forEach(card => {
+      const id = card.id;
+      const word = id.replace(/^card-/, '');
+      const color = cardDict[word];
 
-    // if (leader_list.includes(currentUser)) {
-    //   cards.forEach(card => {
-    //     card.style.backgroundColor = card.dataset.color;
-    //   });
-    // }
+      if (leader_list.includes(currentUser)) {
+        card.style.backgroundColor = color.toLowerCase();
+      }
+      if (card.dataset.isChosen === 'guessed') {
+        markGuessed(card, color);
+        return;
+      }
+      if (
+        action === 'reveal_guessed_cards' &&
+        card.dataset.isChosen === 'true'
+      ) {
+        pickedCardIds.push(word);
+        card.dataset.isChosen = 'guessed';
+        markGuessed(card, color);
+        return;
+      }
+      card.onclick = () => card_choice(id);
+    });
+
+    if (action === 'reveal_guessed_cards' && pickedCardIds.length) {
+      gameSocket.send(
+        JSON.stringify({
+          action: 'picked_cards',
+          pickedCards: pickedCardIds,
+        }),
+      );
+
+      window.gameState.chosenCount = 0;
+      window.gameState.hintWord = null;
+      window.gameState.hintNum = 0;
+    }
+
+    function markGuessed(card, color) {
+      const bg = 'grey';
+      const fg = color === 'Neutral' ? 'white' : color.toLowerCase();
+      card.style.backgroundColor = bg;
+      card.style.color = fg;
+      card.style.border = '';
+      card.onclick = null;
+    }
   }
 </script>
 {% endblock %}

@@ -7,7 +7,7 @@
   {% for card in cards_list %}
   <li
     id="card-{{ card.word }}"
-    data-is-chosen="{% if card.word in picked_cards %}guessed{% else %}false{% endif %}"
+    data-is-chosen="{% if card.word in guessed_cards %}guessed{% else %}false{% endif %}"
     onclick="card_choice(this.id)"
   >
     {{ card.word }}
@@ -152,6 +152,8 @@
       }
 
       startCountdown(remainingTime, startTime * 1000, 'sync_time');
+    } else if (data.action === 'game_over') {
+      console.log('Game over');
     }
   };
 
@@ -262,7 +264,7 @@
     const cardDict = JSON.parse(
       sessionStorage.getItem(`cardDict_${gameId}`) || '{}',
     );
-    const pickedCardIds = [];
+    const pickedCardWords = [];
 
     cards.forEach(card => {
       const id = card.id;
@@ -280,7 +282,7 @@
         action === 'reveal_guessed_cards' &&
         card.dataset.isChosen === 'true'
       ) {
-        pickedCardIds.push(word);
+        pickedCardWords.push(word);
         card.dataset.isChosen = 'guessed';
         markGuessed(card, color);
         return;
@@ -288,11 +290,11 @@
       card.onclick = () => card_choice(id);
     });
 
-    if (action === 'reveal_guessed_cards' && pickedCardIds.length) {
+    if (action === 'reveal_guessed_cards' && pickedCardWords.length) {
       gameSocket.send(
         JSON.stringify({
-          action: 'picked_cards',
-          pickedCards: pickedCardIds,
+          action: 'picked_words',
+          pickedCards: pickedCardWords,
         }),
       );
 

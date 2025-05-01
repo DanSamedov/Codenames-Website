@@ -1,6 +1,6 @@
 import random
 from game.models import Card, Word
-from room.models import Game
+
 
 def generate_cards(game):
     starting_team = random.choice(('Red', 'Blue'))

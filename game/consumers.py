@@ -3,11 +3,12 @@ import time
 import threading
 from dataclasses import dataclass, field
 from channels.generic.websocket import WebsocketConsumer
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import async_to_sync
 from room.models import Player, Game
-from game.utils.hints_logic import add_hint, get_last_hint
-from game.utils.guesses_logic import add_guess
+from game.models import Card
+from game.utils.hints_logic import add_hint
 from django.core.cache import cache
+from django.db import transaction
 
 
 class GameConsumer(WebsocketConsumer):
@@ -71,7 +72,7 @@ class GameConsumer(WebsocketConsumer):
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
             self.event_processor.capture_hint(data)
             self.phase_manager.advance_phase()
-        elif action == "picked_cards":
+        elif action == "picked_words":
             self.event_processor.capture_picks(data)
 
     def player_join(self, event):
@@ -188,7 +189,7 @@ class PhaseManager:
 
             self.set_phase("hint_phase_start", 10)
             threading.Thread(
-                target=self.event_processor.save_picked_cards,
+                target=self.event_processor.save_picked_words,
                 daemon=True
             ).start()
 
@@ -199,11 +200,6 @@ class PhaseManager:
         if not phase or phase.name != phase_name:
             return
 
-        # lock_key = f"{self.cache_prefix}_scheduler_{phase_name}"
-        # lock_acquired = cache.add(lock_key, True, timeout=phase.duration + 2)
-        # if not lock_acquired:
-        #     return
-        
         phase = Phase(
             name=phase.name,
             duration=phase.duration,
@@ -402,23 +398,29 @@ class GameEventProcessor:
             self._stored_picks = data
             self.picks_received.set()    
 
-    def save_picked_cards(self):
+    def save_picked_words(self):
         self.picks_received.wait(timeout=3)
         
-        if not self._stored_picks:
+        data = self._stored_picks or {}
+        picked_words = data.get("pickedCards", [])
+        if not picked_words:
             return
+        
+        game = Game.objects.get(pk=self.game_id)
 
-        picked_cards = self._stored_picks.get("pickedCards", [])
-        hint = get_last_hint(self.game_id)
-        if hint and picked_cards:
-            add_guess(picked_cards, hint)
+        with transaction.atomic():
+            Card.objects.filter(
+                game=game,
+                word__in=picked_words
+            ).update(is_guessed=True)
+
         self._stored_picks = None
         self.picks_received.clear()
 
     def finish_check(self):
         game = Game.objects.get(id=self.game_id)
         red_guesses, blue_guesses, starting_team = game.tally_scores()
-        print(red_guesses, blue_guesses)
+
         red_wins  = (starting_team == "Red" and red_guesses >= 9) or (starting_team != "Red" and red_guesses >= 8)
         blue_wins = (starting_team == "Blue" and blue_guesses >= 9) or (starting_team != "Blue" and blue_guesses >= 8)
 

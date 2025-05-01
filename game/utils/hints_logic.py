@@ -1,4 +1,3 @@
-from room.models import Game
 from game.models import Hint 
 
 

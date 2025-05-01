@@ -1,9 +1,7 @@
 from django.shortcuts import render, get_object_or_404
-from .models import Card, Guess
+from .models import Card
 from room.models import Game, Player
 from game.utils.hints_logic import get_last_hint
-from django.core.serializers.json import DjangoJSONEncoder
-import json
 
 # Create your views here.
 def game_view(request, id):
@@ -15,14 +13,14 @@ def game_view(request, id):
     cards = Card.objects.filter(game=game_obj)
     cards_list = list(cards.values('word', 'color'))
     last_hint = get_last_hint(game_obj)
-    picked_cards = Guess.objects.filter(hint__game=game_obj.id).values_list('guess', flat=True)
-    
+    guessed_cards = Card.objects.filter(game=game_obj, is_guessed=True).values_list('word', flat=True)
+
     context = {
         'game_obj': game_obj,
         'cards_list': cards_list,
         'current_player': current_player,
         'last_hint': last_hint,
-        'picked_cards': picked_cards,
+        'guessed_cards': guessed_cards,
     }
 
     return render(request, 'game.html', context)

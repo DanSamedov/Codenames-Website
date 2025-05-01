@@ -13,6 +13,7 @@ class Card(models.Model):
     game = models.ForeignKey('room.Game', on_delete=models.CASCADE)
     word = models.CharField(max_length=255, null=True, blank=True, default="")
     color = models.CharField(max_length=255, null=True, blank=True, default="")
+    is_guessed  = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Game {self.game.id} - {self.word}"
@@ -33,19 +34,3 @@ class Hint(models.Model):
 
     def __str__(self):
         return f"{self.team} team hint: {self.word} (Game {self.game.id})"
-
-
-class Guess(models.Model):
-    guess = models.CharField(max_length=255, null=True, blank=True, default="")
-    hint = models.ForeignKey('Hint', on_delete=models.CASCADE, related_name='guesses')
-
-    @property
-    def game(self):
-        return self.hint.game
-
-    @property
-    def team(self):
-        return self.hint.team
-
-    def __str__(self):
-        return f"Guess for {self.hint}: {self.guess}"

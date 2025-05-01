@@ -1,5 +1,5 @@
 from django.db import models
-from game.models import Guess
+from game.models import Card
 
 # Create your models here.
 def team_choices():
@@ -19,9 +19,9 @@ class Game(models.Model):
     blue_team_score = models.IntegerField(default=0)
 
     def tally_scores(self):
-        guesses = Guess.objects.filter(hint__game=self)
-        red_guesses  = guesses.filter(hint__team="Red").count()
-        blue_guesses = guesses.filter(hint__team="Blue").count()
+        guesses = Card.objects.filter(game=self)
+        red_guesses  = guesses.filter(is_guessed=True, color="Red").count()
+        blue_guesses = guesses.filter(is_guessed=True, color="Blue").count()
 
         self.red_team_score  = red_guesses
         self.blue_team_score = blue_guesses

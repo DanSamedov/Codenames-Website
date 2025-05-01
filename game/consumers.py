@@ -92,6 +92,9 @@ class GameConsumer(WebsocketConsumer):
     def reveal_cards(self, event):
         self.event_dispatcher.reveal_cards(event)
 
+    def game_over(self, event):
+        self.event_dispatcher.game_over(event)
+
 @dataclass
 class Phase:
     name: str
@@ -179,6 +182,10 @@ class PhaseManager:
             ).start()
         else:
             self.event_dispatcher.send_reveal_cards()
+            result = self.event_processor.finish_check()
+            if result:
+                self.event_dispatcher.send_game_over(result)
+
             self.set_phase("hint_phase_start", 10)
             threading.Thread(
                 target=self.event_processor.save_picked_cards,
@@ -192,10 +199,10 @@ class PhaseManager:
         if not phase or phase.name != phase_name:
             return
 
-        lock_key = f"{self.cache_prefix}_scheduler_{phase_name}"
-        lock_acquired = cache.add(lock_key, True, timeout=phase.duration + 2)
-        if not lock_acquired:
-            return
+        # lock_key = f"{self.cache_prefix}_scheduler_{phase_name}"
+        # lock_acquired = cache.add(lock_key, True, timeout=phase.duration + 2)
+        # if not lock_acquired:
+        #     return
         
         phase = Phase(
             name=phase.name,
@@ -306,7 +313,16 @@ class GameEventDispatcher:
                     )
                 }
             )
-    
+        
+    def send_game_over(self, payload):
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                "type": "game_over",
+                "payload": payload
+            }
+        )
+
     def player_join(self, event):
         leader_list = event['leader_list']
         self.send_handler(text_data=json.dumps({
@@ -349,6 +365,12 @@ class GameEventDispatcher:
             "start_time": event["start_time"]
         }))
 
+    def game_over(self, event):
+        self.send_handler(text_data=json.dumps({
+            "action": "game_over",
+            **event["payload"]
+        }))
+
 
 class GameEventProcessor:
     def __init__(self, game_id):
@@ -360,7 +382,6 @@ class GameEventProcessor:
     def capture_hint(self, data):
         if self._stored_hint is None:
             self._stored_hint = data
-
 
     def save_submitted_hints(self):
         data = self._stored_hint
@@ -393,3 +414,23 @@ class GameEventProcessor:
             add_guess(picked_cards, hint)
         self._stored_picks = None
         self.picks_received.clear()
+
+    def finish_check(self):
+        game = Game.objects.get(id=self.game_id)
+        red_guesses, blue_guesses, starting_team = game.tally_scores()
+        print(red_guesses, blue_guesses)
+        red_wins  = (starting_team == "Red" and red_guesses >= 9) or (starting_team != "Red" and red_guesses >= 8)
+        blue_wins = (starting_team == "Blue" and blue_guesses >= 9) or (starting_team != "Blue" and blue_guesses >= 8)
+
+        if red_wins or blue_wins:
+            winner = "Red" if red_wins else "Blue"
+            game.winners = winner
+            game.save(update_fields=['winners'])
+
+            return {
+            "winner": winner,
+            "red_score": game.red_team_score,
+            "blue_score": game.blue_team_score,
+            }
+
+        return None

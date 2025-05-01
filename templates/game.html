@@ -7,7 +7,7 @@
   {% for card in cards_list %}
   <li
     id="card-{{ card.word }}"
-    data-is-chosen="false"
+    data-is-chosen="{% if card.word in picked_cards %}guessed{% else %}false{% endif %}"
     onclick="card_choice(this.id)"
   >
     {{ card.word }}
@@ -254,38 +254,6 @@
       document.getElementById('hint-form').reset();
     }
   }
-
-  // function revealGuessedCards() {
-  //   //get guessed cards
-  //   const pickedCards = document.querySelectorAll('[data-is-chosen="true"]');
-  //   const pickedCardIds = Array.from(pickedCards).map(card => card.id);
-
-  //   // send picked cards to the backend
-  //   gameSocket.send(
-  //     JSON.stringify({
-  //       action: 'picked_cards',
-  //       pickedCards: pickedCardIds,
-  //     }),
-  //   );
-
-  //   //reset card_choice parameters
-  //   window.gameState.chosenCount = 0;
-  //   window.gameState.hintWord = null;
-  //   window.gameState.hintNum = 0;
-
-  //   console.log(pickedCards);
-
-  //   //display chosen cards
-  //   pickedCards.forEach(card => {
-  //     card.onclick = null;
-  //     card.dataset.isChosen = 'guessed';
-
-  //     card.style.backgroundColor = 'grey';
-  //     card.style.border = '';
-  //     if (card.dataset.color === 'Neutral') card.style.color = 'white';
-  //     else card.style.color = card.dataset.color;
-  //   });
-  // }
 
   function initCards(data = {}) {
     const action = data.action || 'init';

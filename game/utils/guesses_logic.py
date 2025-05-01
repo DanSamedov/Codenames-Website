@@ -6,14 +6,9 @@ def add_guess(guess_ids, hint):
     if not hint:
         raise ValueError("Cannot create guesses without a valid hint")
 
-    cleaned_words = [
-        gid.replace('card-', '', 1)
-        for gid in guess_ids
-    ]
-
     guesses_to_create = [
         Guess(hint=hint, guess=word)
-        for word in cleaned_words
+        for word in guess_ids
     ]
 
     try:

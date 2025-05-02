@@ -12,14 +12,12 @@ def game_view(request, id):
 
     cards = Card.objects.filter(game=game_obj)
     cards_list = list(cards.values('word', 'color'))
-    last_hint = get_last_hint(game_obj)
     guessed_cards = Card.objects.filter(game=game_obj, is_guessed=True).values_list('word', flat=True)
 
     context = {
         'game_obj': game_obj,
         'cards_list': cards_list,
         'current_player': current_player,
-        'last_hint': last_hint,
         'guessed_cards': guessed_cards,
     }
 

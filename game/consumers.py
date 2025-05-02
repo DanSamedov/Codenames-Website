@@ -6,7 +6,7 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 from room.models import Player, Game
 from game.models import Card
-from game.utils.hints_logic import add_hint
+from game.utils.hints_logic import add_hint, get_last_hint
 from django.core.cache import cache
 from django.db import transaction
 
@@ -38,7 +38,10 @@ class GameConsumer(WebsocketConsumer):
             self.phase_manager.start_phase_cycle()
         elif phase:
             self.phase_manager.handle_existing_phase()
-            self.event_dispatcher.sync(phase)
+            last_hint=get_last_hint(game_id=self.game_id)
+            hint_word = last_hint.word
+            hint_num = last_hint.num
+            self.event_dispatcher.sync(phase=phase, hint_word=hint_word, hint_num=hint_num)
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -284,7 +287,7 @@ class GameEventDispatcher:
             }
         )
 
-    def sync(self, phase):
+    def sync(self, phase, hint_word, hint_num):
         async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
             {
@@ -293,6 +296,8 @@ class GameEventDispatcher:
                 "phase": phase.name,
                 "team": phase.team,
                 "start_time": phase.start_time,
+                "hint_word": hint_word,
+                "hint_num": hint_num
             }
         )
 
@@ -363,7 +368,9 @@ class GameEventDispatcher:
             "duration": event["duration"],
             "phase": event["phase"],
             "team": event["team"],
-            "start_time": event['start_time']
+            "start_time": event['start_time'],
+            "hint_word": event["hint_word"],
+            "hint_num": event["hint_num"]
         }))
 
     def reveal_cards(self, event):

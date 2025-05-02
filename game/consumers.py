@@ -31,9 +31,10 @@ class GameConsumer(WebsocketConsumer):
 
         phase = self.phase_manager.get_phase()
         creator_username = Player.objects.get(game=self.game_id, creator=True).username
+        starting_team = Game.objects.get(id=self.game_id).starting_team
 
         if not phase and self.username == creator_username:
-            self.phase_manager.set_phase("hint_phase_start", 10)
+            self.phase_manager.set_phase(phase_name="hint_phase", duration=10, team=starting_team)
             self.phase_manager.start_phase_cycle()
         elif phase:
             self.phase_manager.handle_existing_phase()
@@ -62,13 +63,13 @@ class GameConsumer(WebsocketConsumer):
 
         action = data.get("action")
         
-        if action == "card_choice" and phase_name == "round_phase_start":
+        if action == "card_choice" and phase_name == "round_phase":
             self.event_dispatcher.card_choice(
                 username, 
                 card_id=data.get("card_id"), 
                 card_status=data.get("card_status")
             )
-        elif action == "hint_submit" and phase_name == "hint_phase_start":
+        elif action == "hint_submit" and phase_name == "hint_phase":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
             self.event_processor.capture_hint(data)
             self.phase_manager.advance_phase()
@@ -100,6 +101,7 @@ class GameConsumer(WebsocketConsumer):
 class Phase:
     name: str
     duration: int
+    team: str
     start_time: float = field(default_factory=time.time)
     _transition_thread: threading.Thread = None
 
@@ -123,6 +125,7 @@ class Phase:
         return {
             "phase": self.name,
             "duration": self.duration,
+            "team": self.team,
             "start_time": self.start_time,
         }
 
@@ -136,8 +139,8 @@ class PhaseManager:
         self.event_processor = event_processor
         self.current_phase = None
 
-    def set_phase(self, phase_name, duration):
-        self.current_phase = Phase(name=phase_name, duration=duration)
+    def set_phase(self, phase_name: str, duration: int, team: str):
+        self.current_phase = Phase(name=phase_name, duration=duration, team=team)
         cache.set(
             f"{self.cache_prefix}_phase",
             self.current_phase.serialize(),
@@ -154,29 +157,34 @@ class PhaseManager:
         if (
             not self.current_phase
             or self.current_phase.name != phase_data['phase']
+            or self.current_phase.team != phase_data['team']
             or self.current_phase.start_time != phase_data['start_time']
         ):
             self.current_phase = Phase(
                 name=phase_data['phase'],
                 duration=phase_data['duration'],
-                start_time=phase_data['start_time']
+                team = phase_data['team'],
+                start_time=phase_data['start_time'],
             )
 
         return self.current_phase
 
-
     def _on_phase_expire(self, phase: Phase):
         phase_name = phase.name
+        phase_team = phase.team
         expected_start = phase.start_time
 
         phase = self.get_phase()
         if (not phase
             or phase.name != phase_name
-            or phase.start_time != expected_start):
+            or phase.start_time != expected_start
+            or phase.team != phase_team):
             return
+        
+        next_team = "Red" if phase_team == "Blue" else "Blue"
 
-        if phase_name == "hint_phase_start":
-            self.set_phase("round_phase_start", 20)
+        if phase_name == "hint_phase":
+            self.set_phase(phase_name="round_phase", duration=20, team=phase.team)
             threading.Thread(
                 target=self.event_processor.save_submitted_hints,
                 daemon=True
@@ -187,7 +195,7 @@ class PhaseManager:
             if result:
                 self.event_dispatcher.send_game_over(result)
 
-            self.set_phase("hint_phase_start", 10)
+            self.set_phase(phase_name="hint_phase", duration=10, team=next_team)
             threading.Thread(
                 target=self.event_processor.save_picked_words,
                 daemon=True
@@ -203,6 +211,7 @@ class PhaseManager:
         phase = Phase(
             name=phase.name,
             duration=phase.duration,
+            team=phase.team,
             start_time=phase.start_time
         )
         phase.schedule_transition(self._on_phase_expire)
@@ -216,9 +225,13 @@ class PhaseManager:
         end_time = phase.start_time + phase.duration
         
         if now >= end_time:
-            next_phase = "hint_phase_start" if phase.name == "round_phase_start" else "round_phase_start"
-            next_duration = 10 if next_phase == "hint_phase_start" else 20
-            self.set_phase(next_phase, next_duration)
+            next_phase = "hint_phase" if phase.name == "round_phase" else "round_phase"
+            next_duration = 10 if next_phase == "hint_phase" else 20
+            if next_phase == "round_phase":
+                next_team = "Red" if phase.team == "Blue" else "Blue"
+            else:
+                next_team = phase.team
+            self.set_phase(phase_name=next_phase, duration=next_duration, team=next_team)
             self.start_phase_cycle()
         else:
             self.schedule_phase_transition(phase.name)
@@ -231,6 +244,7 @@ class PhaseManager:
         self.event_dispatcher.send_phase(
             phase_type=phase.name,
             duration=phase.duration,
+            team=phase.team,
             start_time=phase.start_time
         )
         self.schedule_phase_transition(phase.name)
@@ -277,17 +291,19 @@ class GameEventDispatcher:
                 "type": "sync_time",
                 "duration": phase.duration,
                 "phase": phase.name,
-                "start_time": phase.start_time
+                "team": phase.team,
+                "start_time": phase.start_time,
             }
         )
 
-    def send_phase(self, phase_type, duration, start_time):
+    def send_phase(self, phase_type, duration, start_time, team):
         async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
             {
                 "type": "phase_event",
                 "phase": phase_type,
                 "duration": duration,
+                "team": team,
                 "start_time": start_time,
             })
         
@@ -346,6 +362,7 @@ class GameEventDispatcher:
             "action": "sync_time",
             "duration": event["duration"],
             "phase": event["phase"],
+            "team": event["team"],
             "start_time": event['start_time']
         }))
 
@@ -358,6 +375,7 @@ class GameEventDispatcher:
         self.send_handler(text_data=json.dumps({
             "action": event["phase"],
             "duration": event["duration"],
+            "team": event["team"],
             "start_time": event["start_time"]
         }))
 

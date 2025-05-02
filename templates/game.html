@@ -15,7 +15,7 @@
   {% endfor %}
 </ul>
 {% if current_player.leader %}
-<form id="hint-form" class="">
+<form id="hint-form" class="visually-hidden">
   <div id="hint-word-input">
     <!-- prettier-ignore -->
     <label
@@ -56,6 +56,7 @@
     document.getElementById('game-id-data').textContent,
   );
   const initializedKey = `game_${gameId}_initialized`;
+  const currentUser = '{{ current_player.username }}';
 
   if (!sessionStorage.getItem(initializedKey)) {
     const cardsData = JSON.parse(
@@ -75,12 +76,11 @@
     'ws://' + window.location.host + '/ws/game/' + gameId + '/',
   );
 
-  let currentUser = '{{ current_player.username }}';
-
   window.gameState = {
     clockOffset: 0,
     timerInterval: null,
-    phase: 'hint',
+    phase: 'hint_phase',
+    team: null,
     hintNum: 0,
     hintWord: null,
     chosenCount: 0,
@@ -99,11 +99,11 @@
     ) {
       initCards(data);
     } else if (data.action === 'choose_card') {
-      let username = data['username'];
-      let card_id = data['card_id'];
-      let card_status = data['card_status'];
+      const username = data.username;
+      const card_id = data.card_id;
+      const card_status = data.card_status;
 
-      let card = document.getElementById(card_id);
+      const card = document.getElementById(card_id);
 
       if (card_status === true) {
         card.style.border = '2px solid yellow';
@@ -113,30 +113,34 @@
         card.dataset.isChosen = 'false';
       }
     } else if (data.action === 'hint_display') {
-      window.gameState.hintWord = data['hint_word'];
-      window.gameState.hintNum = Number(data['hint_num']);
+      window.gameState.hintWord = data.hint_word;
+      window.gameState.hintNum = Number(data.hint_num);
 
       document.getElementById(
         'hintDisplay',
       ).innerText = `Hint: ${window.gameState.hintWord} \n Number of words: ${window.gameState.hintNum}`;
-    } else if (data.action === 'round_phase_start') {
-      window.gameState.phase = 'round';
-      const roundDuration = data['duration'];
-      const startTime =
-        (data['start_time'] + window.gameState.clockOffset) * 1000;
+    } else if (data.action === 'round_phase') {
+      window.gameState.phase = 'round_phase';
+      window.gameState.team = data.team;
 
-      startCountdown(roundDuration, startTime, 'timer_cycle');
-    } else if (data.action === 'hint_phase_start') {
-      window.gameState.phase = 'hint';
-      const roundDuration = data['duration'];
-      const startTime =
-        (data['start_time'] + window.gameState.clockOffset) * 1000;
+      const roundDuration = data.duration;
+      const startTime = (data.start_time + window.gameState.clockOffset) * 1000;
 
-      startCountdown(roundDuration, startTime, 'timer_cycle');
+      startCountdown(roundDuration, startTime);
+      toggleHintFormVisibility();
+    } else if (data.action === 'hint_phase') {
+      window.gameState.phase = 'hint_phase';
+      window.gameState.team = data.team;
+
+      const roundDuration = data.duration;
+      const startTime = (data.start_time + window.gameState.clockOffset) * 1000;
+
+      startCountdown(roundDuration, startTime);
+      toggleHintFormVisibility();
     } else if (data.action === 'sync_time') {
-      duration = data['duration'];
-      window.gameState.phase = data['phase'];
-      startTime = data['start_time'];
+      duration = data.duration;
+      window.gameState.phase = data.phase;
+      startTime = data.start_time;
 
       const clientTimeAtSync = Date.now() / 1000;
       window.gameState.clockOffset = startTime - clientTimeAtSync;
@@ -151,7 +155,8 @@
         window.gameState.timerInterval = null;
       }
 
-      startCountdown(remainingTime, startTime * 1000, 'sync_time');
+      startCountdown(remainingTime, startTime * 1000);
+      toggleHintFormVisibility();
     } else if (data.action === 'game_over') {
       console.log('Game over');
     }
@@ -167,15 +172,16 @@
     }
 
     initCards();
+    toggleHintFormVisibility();
   });
 
   function card_choice(card_id) {
-    let card = document.getElementById(card_id);
+    const card = document.getElementById(card_id);
     let isChosen = card.dataset.isChosen;
 
     if (
       '{{current_player.leader}}' != 'True' &&
-      window.gameState.phase === 'round'
+      window.gameState.phase === 'round_phase'
     ) {
       if (isChosen === 'true') {
         card.style.border = '';
@@ -202,9 +208,8 @@
     }
   }
 
-  function startCountdown(duration, startTime, type) {
+  function startCountdown(duration, startTime) {
     const timerDisplay = document.getElementById('timer');
-    const hintForm = document.getElementById('hint-form');
 
     if (window.gameState.timerInterval) {
       clearInterval(window.gameState.timerInterval);
@@ -235,7 +240,7 @@
 
   function submitHintWord(event) {
     event.preventDefault();
-    if (window.gameState.phase === 'hint') {
+    if (window.gameState.phase === 'hint_phase') {
       const hintWordInput = document.getElementById('hintWordInput');
       const hintNumInput = document.getElementById('hintNumInput');
 
@@ -310,6 +315,18 @@
       card.style.color = fg;
       card.style.border = '';
       card.onclick = null;
+    }
+  }
+
+  function toggleHintFormVisibility() {
+    const hintForm = document.getElementById('hint-form');
+    if (!hintForm) return;
+
+    const isRoundPhase = window.gameState.phase === 'round_phase';
+    if (isRoundPhase) {
+      hintForm.classList.add('visually-hidden');
+    } else {
+      hintForm.classList.remove('visually-hidden');
     }
   }
 </script>

@@ -74,10 +74,14 @@ class GameConsumer(WebsocketConsumer):
             )
         elif action == "hint_submit" and phase_name == "hint_phase":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
-            self.event_processor.capture_hint(data)
+            self.event_processor.save_submitted_hints(data)
             self.phase_manager.advance_phase()
         elif action == "picked_words":
-            self.event_processor.capture_picks(data)
+            data["team"] = phase.team
+            self.event_dispatcher.send_reveal_cards()
+            payload = self.event_processor.save_picked_words(data)
+            if payload:
+                self.event_dispatcher.send_game_over(payload)
 
     def player_join(self, event):
         self.event_dispatcher.player_join(event)
@@ -177,6 +181,10 @@ class PhaseManager:
         phase_team = phase.team
         expected_start = phase.start_time
 
+        game = Game.objects.get(pk=self.game_id)
+        if game.winners:
+            return
+        
         phase = self.get_phase()
         if (not phase
             or phase.name != phase_name
@@ -188,22 +196,12 @@ class PhaseManager:
 
         if phase_name == "hint_phase":
             self.set_phase(phase_name="round_phase", duration=20, team=phase.team)
-            threading.Thread(
-                target=self.event_processor.save_submitted_hints,
-                daemon=True
-            ).start()
         else:
-            self.event_dispatcher.send_reveal_cards()
-            result = self.event_processor.finish_check()
-            if result:
-                self.event_dispatcher.send_game_over(result)
-
-            self.set_phase(phase_name="hint_phase", duration=10, team=next_team)
-            threading.Thread(
-                target=self.event_processor.save_picked_words,
-                daemon=True
-            ).start()
-
+            self.set_phase(
+                phase_name="hint_phase",
+                duration=10,
+                team=next_team
+            )
         self.start_phase_cycle()
 
     def schedule_phase_transition(self, phase_name: str):
@@ -396,68 +394,74 @@ class GameEventDispatcher:
 class GameEventProcessor:
     def __init__(self, game_id):
         self.game_id = game_id
-        self._stored_hint = None
-        self._stored_picks = None
-        self.picks_received = threading.Event()
+        self.cache_prefix = f"game_{game_id}_events"
 
-    def capture_hint(self, data):
-        if self._stored_hint is None:
-            self._stored_hint = data
-
-    def save_submitted_hints(self):
-        data = self._stored_hint
-
+    def save_submitted_hints(self, data):
         if not data:
             return
-        
-        add_hint(
-            Game.objects.get(id=self.game_id),
-            data["leaderTeam"],
-            data["hintWord"],
-            data["hintNum"]
-        )
-        self._stored_hint = None
-
-    def capture_picks(self, data):
-        if self._stored_picks is None:
-            self._stored_picks = data
-            self.picks_received.set()    
-
-    def save_picked_words(self):
-        self.picks_received.wait(timeout=3)
-        
-        data = self._stored_picks or {}
-        picked_words = data.get("pickedCards", [])
-        if not picked_words:
-            return
-        
-        game = Game.objects.get(pk=self.game_id)
 
         with transaction.atomic():
-            Card.objects.filter(
-                game=game,
+            game = Game.objects.get(id=self.game_id)
+            add_hint(
+                game,
+                data["leaderTeam"],
+                data["hintWord"],
+                data["hintNum"]
+            )
+
+    def save_picked_words(self, data):
+        if not data:
+            return None
+
+        with transaction.atomic():
+            game = Game.objects.get(pk=self.game_id)
+            picked_words = data["pickedCards"]
+            team = data["team"]
+
+            picked_cards = Card.objects.filter(
+                game=game, 
                 word__in=picked_words
-            ).update(is_guessed=True)
+            )
+            picked_cards.update(is_guessed=True)
+            assassin = picked_cards.filter(color='Black').first()
 
-        self._stored_picks = None
-        self.picks_received.clear()
+            if assassin:
+                winner = team
+                game.winners = winner
+                game.save(update_fields=['winners'])
 
-    def finish_check(self):
-        game = Game.objects.get(id=self.game_id)
-        red_guesses, blue_guesses, starting_team = game.tally_scores()
+                return self.game_over_payload(winner=winner, reason="assassin_picked", game=game)
 
-        red_wins  = (starting_team == "Red" and red_guesses >= 9) or (starting_team != "Red" and red_guesses >= 8)
-        blue_wins = (starting_team == "Blue" and blue_guesses >= 9) or (starting_team != "Blue" and blue_guesses >= 8)
+            instant_win_payload = self.check_instant_win(game)
+            if instant_win_payload:
+                return instant_win_payload
 
-        if red_wins or blue_wins:
-            winner = "Red" if red_wins else "Blue"
-            game.winners = winner
-            game.save(update_fields=['winners'])
+            return None
 
-            return {
+    def check_instant_win(self, game: Game):
+        with transaction.atomic():
+            red_guesses, blue_guesses, starting_team = game.tally_scores()
+
+            red_wins  = (starting_team == "Red" and red_guesses >= 9) or (starting_team != "Red" and red_guesses >= 8)
+            blue_wins = (starting_team == "Blue" and blue_guesses >= 9) or (starting_team != "Blue" and blue_guesses >= 8)
+            
+            if red_wins and blue_wins:
+                game.winners = "Draw"
+                game.save(update_fields=['winners'])
+                return self.game_over_payload(winner="Draw", reason="all_cards_guessed", game=game)
+            elif red_wins or blue_wins:
+                winner = "Red" if red_wins else "Blue"
+                game.winners = winner
+                game.save(update_fields=['winners'])
+
+                return self.game_over_payload(winner=winner, reason="all_cards_guessed", game=game)
+
+            return None
+
+    def game_over_payload(self, winner: str, reason: str, game: Game):
+        return {
             "winner": winner,
+            "reason": reason,
             "red_score": game.red_team_score,
-            "blue_score": game.blue_team_score,
-            }
-
-        return None
+            "blue_score": game.blue_team_score
+        }

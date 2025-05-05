@@ -39,9 +39,14 @@ class GameConsumer(WebsocketConsumer):
         elif phase:
             self.phase_manager.handle_existing_phase()
             last_hint=get_last_hint(game_id=self.game_id)
-            hint_word = last_hint.word
-            hint_num = last_hint.num
-            self.event_dispatcher.sync(phase=phase, hint_word=hint_word, hint_num=hint_num)
+            payload = {}
+            if last_hint:
+                payload["hint_word"] = last_hint.word
+                payload["hint_num"] = last_hint.num
+            
+            payload["phase"] = phase.serialize()
+            
+            self.event_dispatcher.sync(payload)
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -78,7 +83,6 @@ class GameConsumer(WebsocketConsumer):
             self.phase_manager.advance_phase()
         elif action == "picked_words":
             data["team"] = phase.team
-            self.event_dispatcher.send_reveal_cards()
             payload = self.event_processor.save_picked_words(data)
             if payload:
                 self.event_dispatcher.send_game_over(payload)
@@ -197,6 +201,7 @@ class PhaseManager:
         if phase_name == "hint_phase":
             self.set_phase(phase_name="round_phase", duration=20, team=phase.team)
         else:
+            self.event_dispatcher.send_reveal_cards()
             self.set_phase(
                 phase_name="hint_phase",
                 duration=10,
@@ -224,7 +229,6 @@ class PhaseManager:
         
         now = time.time()
         end_time = phase.start_time + phase.duration
-        
         if now >= end_time:
             next_phase = "hint_phase" if phase.name == "round_phase" else "round_phase"
             next_duration = 10 if next_phase == "hint_phase" else 20
@@ -285,17 +289,13 @@ class GameEventDispatcher:
             }
         )
 
-    def sync(self, phase, hint_word, hint_num):
+    def sync(self, payload):
         async_to_sync(self.channel_layer.group_send)(
             self.game_group_name,
             {
                 "type": "sync_time",
-                "duration": phase.duration,
-                "phase": phase.name,
-                "team": phase.team,
-                "start_time": phase.start_time,
-                "hint_word": hint_word,
-                "hint_num": hint_num
+                "payload": payload
+
             }
         )
 
@@ -363,12 +363,7 @@ class GameEventDispatcher:
     def sync_time(self, event):
         self.send_handler(text_data=json.dumps({
             "action": "sync_time",
-            "duration": event["duration"],
-            "phase": event["phase"],
-            "team": event["team"],
-            "start_time": event['start_time'],
-            "hint_word": event["hint_word"],
-            "hint_num": event["hint_num"]
+            **event["payload"]
         }))
 
     def reveal_cards(self, event):
@@ -394,7 +389,6 @@ class GameEventDispatcher:
 class GameEventProcessor:
     def __init__(self, game_id):
         self.game_id = game_id
-        self.cache_prefix = f"game_{game_id}_events"
 
     def save_submitted_hints(self, data):
         if not data:

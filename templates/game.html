@@ -121,7 +121,7 @@
       window.gameState.team = data.team;
 
       const roundDuration = data.duration;
-      const startTime = (data.start_time + window.gameState.clockOffset) * 1000;
+      const startTime = data.start_time * 1000;
 
       startCountdown(roundDuration, startTime);
       toggleHintFormVisibility();
@@ -133,18 +133,29 @@
       window.gameState.hintNum = 0;
 
       const roundDuration = data.duration;
-      const startTime = (data.start_time + window.gameState.clockOffset) * 1000;
+      const startTime = data.start_time * 1000;
       startCountdown(roundDuration, startTime);
 
       document.getElementById('hintDisplay').textContent = '';
       toggleHintFormVisibility();
     } else if (data.action === 'sync_time') {
-      window.gameState.phase = data.phase;
-      window.gameState.team = data.team;
-      window.gameState.hintWord = data.hint_word;
-      window.gameState.hintNum = data.hint_num;
-      duration = data.duration;
-      startTime = data.start_time;
+      const phase = data.phase;
+
+      window.gameState.phase = phase.phase;
+      window.gameState.team = phase.team;
+
+      if (data.hint_num && window.gameState.phase === 'round_phase') {
+        window.gameState.hintWord = data.hint_word;
+        window.gameState.hintNum = data.hint_num;
+        document.getElementById(
+          'hintDisplay',
+        ).innerHTML = `Hint: ${data.hint_word}<br/>Number of words: ${data.hint_num}`;
+      } else {
+        document.getElementById('hintDisplay').textContent = '';
+      }
+
+      duration = phase.duration;
+      startTime = phase.start_time;
 
       const clientTimeAtSync = Date.now() / 1000;
       window.gameState.clockOffset = startTime - clientTimeAtSync;
@@ -160,15 +171,6 @@
       }
 
       startCountdown(remainingTime, startTime * 1000);
-
-      if (data.hint_word) {
-        document.getElementById(
-          'hintDisplay',
-        ).innerHTML = `Hint: ${data.hint_word}<br/>Number of words: ${data.hint_num}`;
-      } else {
-        document.getElementById('hintDisplay').textContent = '';
-      }
-
       toggleHintFormVisibility();
     } else if (data.action === 'game_over') {
       alert(`${data.winner} Team wins!`);

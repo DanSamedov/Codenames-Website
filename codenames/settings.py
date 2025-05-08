@@ -80,7 +80,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('redis://127.0.0.1:6379')],
+            "hosts": [(os.getenv("REDIS_HOST"), int(os.getenv("REDIS_PORT")))],
         },
     },
 }
@@ -89,11 +89,18 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+  'default': {
+    'ENGINE':   'django.db.backends.mysql',
+    'NAME':     os.environ['MYSQL_DATABASE'],
+    'USER':     os.environ['MYSQL_USER'],
+    'PASSWORD': os.environ['MYSQL_PASSWORD'],
+    'HOST':     os.environ.get('MYSQL_HOST', 'mysql'),
+    'PORT':     os.environ.get('MYSQL_PORT', '3306'),
+    'OPTIONS':  {'charset': 'utf8mb4', 'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"},
+  }
 }
+
+
 
 
 # Password validation
@@ -142,10 +149,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": "redis://redis:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {"max_connections": 100}
         }
     }
 }

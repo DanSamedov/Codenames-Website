@@ -1,7 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from .models import Card
 from room.models import Game, Player
-from game.utils.hints_logic import get_last_hint
 
 # Create your views here.
 def game_view(request, id):

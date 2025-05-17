@@ -412,19 +412,25 @@ class GameEventProcessor:
             picked_words = data["pickedCards"]
             team = data["team"]
 
-            picked_cards = Card.objects.filter(
-                game=game, 
-                word__in=picked_words
-            )
-            picked_cards.update(is_guessed=True)
-            assassin = picked_cards.filter(color='Black').first()
+            potential_assassin = Card.objects.filter(
+                game=game,
+                word__in=picked_words,
+                color='Black'
+            ).first()
 
-            if assassin:
+            if potential_assassin:
+                Card.objects.filter(pk=potential_assassin.pk).update(is_guessed=True)
+                
                 winner = team
                 game.winners = winner
                 game.save(update_fields=['winners'])
-
                 return self.game_over_payload(winner=winner, reason="assassin_picked", game=game)
+
+            picked_cards = Card.objects.filter(
+                game=game,
+                word__in=picked_words
+            )
+            picked_cards.update(is_guessed=True)
 
             instant_win_payload = self.check_instant_win(game)
             if instant_win_payload:

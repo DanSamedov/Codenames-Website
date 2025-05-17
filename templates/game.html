@@ -78,8 +78,9 @@
     phase: 'hint_phase',
     team: null,
     hintNum: parseInt(localStorage.getItem('hintNum')) || 0,
-    hintWord: null,
+    hintWord: localStorage.getItem('hintWord') || null,
     chosenCount: parseInt(localStorage.getItem('chosenCount')) || 0,
+    hasWinnerBeenShown: false,
   };
 
   gameSocket.onclose = function (e) {
@@ -112,6 +113,7 @@
     } else if (data.action === 'hint_display') {
       window.gameState.hintWord = data.hint_word;
       window.gameState.hintNum = Number(data.hint_num);
+      localStorage.setItem('hintWord', window.gameState.hintWord);
       localStorage.setItem('hintNum', window.gameState.hintNum);
 
       document.getElementById(
@@ -135,6 +137,7 @@
       window.gameState.chosenCount = 0;
 
       localStorage.removeItem('selectedCards');
+      localStorage.removeItem('hintWord');
       localStorage.removeItem('hintNum');
       localStorage.removeItem('chosenCount');
 
@@ -147,15 +150,16 @@
     } else if (data.action === 'sync_time') {
       const phase = data.phase;
 
-      window.gameState.phase = phase.phase;
+      const storedHintNum = parseInt(localStorage.getItem('hintNum'));
+      const storedHintWord = localStorage.getItem('hintWord');
+
+      window.gameState.phase = data.phase.phase;
       window.gameState.team = phase.team;
 
-      if (data.hint_num && window.gameState.phase === 'round_phase') {
-        window.gameState.hintWord = data.hint_word;
-        window.gameState.hintNum = data.hint_num;
+      if (storedHintNum && window.gameState.phase === 'round_phase') {
         document.getElementById(
           'hintDisplay',
-        ).innerHTML = `Hint: ${data.hint_word}<br/>Number of words: ${data.hint_num}`;
+        ).innerHTML = `Hint: ${storedHintWord}<br/>Number of words: ${storedHintNum}`;
       } else {
         document.getElementById('hintDisplay').textContent = '';
       }
@@ -179,7 +183,32 @@
       startCountdown(remainingTime, startTime * 1000);
       toggleHintFormVisibility();
     } else if (data.action === 'game_over') {
-      alert(`${data.winner} Team wins!`);
+      if (!window.gameState.hasWinnerBeenShown) {
+        window.gameState.hasWinnerBeenShown = true;
+
+        if (window.gameState.timerInterval) {
+          clearInterval(window.gameState.timerInterval);
+          window.gameState.timerInterval = null;
+        }
+
+        document.getElementById(
+          'hintDisplay',
+        ).innerHTML = `<h2>🎉 Team ${data.winner} Wins! Redirecting...</h2>`;
+        document.getElementById('timer').textContent = '';
+
+        alert(`${data.winner} Team wins!`);
+
+        if (gameSocket.readyState === WebSocket.OPEN) {
+          gameSocket.close();
+        }
+
+        setTimeout(() => {
+          const redirectUrl = new URL(window.location.href);
+          redirectUrl.pathname = '/';
+          redirectUrl.search = '';
+          window.location.href = redirectUrl.toString();
+        }, 1000);
+      }
     }
   };
 

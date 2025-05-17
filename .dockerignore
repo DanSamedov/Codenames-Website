@@ -1,3 +1,44 @@
-.backup
-README.md
-Dockerfile*
+# Ignore environment files
+.env
+*.env
+*.env.*
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore temporary files and directories
+*.swp
+*.swo
+*.bak
+*.backup
+*.tmp
+*.log
+
+# Ignore local IDE settings and configuration files
+.vscode/
+.idea/
+*.code-workspace
+
+# Ignore database files
+*.sqlite3
+*.db
+
+# Ignore Docker-related files (except main Dockerfile)
+.dockerignore
+Dockerfile.*
+!Dockerfile
+
+# Ignore Git-related files
+.git/
+.gitignore
+
+# Ignore test and coverage files
+tests/
+coverage/
+*.coverage
+
+# Ignore any other local settings
+local_settings.py

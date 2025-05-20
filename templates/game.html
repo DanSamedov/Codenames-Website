@@ -79,7 +79,6 @@
     team: null,
     hintNum: parseInt(localStorage.getItem('hintNum')) || 0,
     hintWord: localStorage.getItem('hintWord') || null,
-    chosenCount: parseInt(localStorage.getItem('chosenCount')) || 0,
     hasWinnerBeenShown: false,
   };
 
@@ -95,6 +94,21 @@
       data.action == 'reveal_guessed_cards'
     ) {
       initCards(data);
+    } else if (data.action === 'selected_cards') {
+      selectedCards = data.cards;
+      document.querySelectorAll('[data-is-chosen]').forEach(card => {
+        const isGuessed = card.dataset.isChosen === 'guessed';
+
+        card.dataset.isChosen = isGuessed ? 'guessed' : 'false';
+        card.style.border = '';
+      });
+      selectedCards.forEach(id => {
+        const card = document.getElementById(id);
+        if (card) {
+          card.dataset.isChosen = 'true';
+          card.style.border = '2px solid yellow';
+        }
+      });
     } else if (data.action === 'choose_card') {
       const username = data.username;
       const card_id = data.card_id;
@@ -139,7 +153,6 @@
       localStorage.removeItem('selectedCards');
       localStorage.removeItem('hintWord');
       localStorage.removeItem('hintNum');
-      localStorage.removeItem('chosenCount');
 
       const roundDuration = data.duration;
       const startTime = data.start_time * 1000;
@@ -212,87 +225,64 @@
     }
   };
 
-  document.addEventListener('DOMContentLoaded', function () {
-    let hintForm = document.getElementById('hint-form');
+  document.addEventListener('DOMContentLoaded', () => {
+    const hintForm = document.getElementById('hint-form');
+    if (hintForm) hintForm.onsubmit = submitHintWord;
 
-    if (hintForm) {
-      hintForm.onsubmit = function (event) {
-        submitHintWord(event);
-      };
-    }
-
-    const selectedCards =
-      JSON.parse(localStorage.getItem('selectedCards')) || [];
-    selectedCards.forEach(cardId => {
-      const card = document.getElementById(cardId);
-      if (card) {
-        card.dataset.isChosen = 'true';
-        card.style.border = '2px solid yellow';
-      }
-    });
-
-    window.gameState.chosenCount = selectedCards.length;
-    localStorage.setItem('chosenCount', selectedCards.length);
-
+    window.gameState.chosenCount = getChosenCount();
     window.gameState.hintNum = parseInt(localStorage.getItem('hintNum')) || 0;
 
     initCards();
     toggleHintFormVisibility();
   });
 
+  function getChosenCount() {
+    return document.querySelectorAll('[data-is-chosen="true"]').length;
+  }
+
   function card_choice(card_id) {
     const card = document.getElementById(card_id);
-    let isChosen = card.dataset.isChosen;
+    if (!card) return;
+    const maxSelections = (parseInt(localStorage.getItem('hintNum')) || 0) + 1;
+
+    if (
+      currentUserLeader === 'True' ||
+      window.gameState.phase !== 'round_phase' ||
+      currentUserTeam !== window.gameState.team
+    ) {
+      return;
+    }
 
     const selectedCards =
       JSON.parse(localStorage.getItem('selectedCards')) || [];
-    const storedHintNum = parseInt(localStorage.getItem('hintNum')) || 0;
-    const maxSelections = storedHintNum + 1;
-    const currentCount = parseInt(localStorage.getItem('chosenCount')) || 0;
-    window.gameState.chosenCount = currentCount;
+    const isChosen = card.dataset.isChosen === 'true';
 
-    if (
-      currentUserLeader !== 'True' &&
-      window.gameState.phase === 'round_phase' &&
-      currentUserTeam === window.gameState.team
-    ) {
-      if (isChosen === 'true') {
-        card.style.border = '';
-        card.dataset.isChosen = 'false';
-
-        window.gameState.chosenCount--;
-
-        const index = selectedCards.indexOf(card_id);
-        if (index > -1) {
-          selectedCards.splice(index, 1);
-        }
-      } else {
-        if (window.gameState.chosenCount >= maxSelections) {
-          alert(`You can only choose ${maxSelections} cards.`);
-          return;
-        }
-
-        card.style.border = '2px solid yellow';
-        card.dataset.isChosen = 'true';
-
-        window.gameState.chosenCount++;
-
-        if (!selectedCards.includes(card_id)) {
-          selectedCards.push(card_id);
-        }
+    if (isChosen) {
+      card.dataset.isChosen = 'false';
+      card.style.border = '';
+      const idx = selectedCards.indexOf(card_id);
+      if (idx > -1) selectedCards.splice(idx, 1);
+    } else {
+      if (getChosenCount() >= maxSelections) {
+        return alert(`You can only choose ${maxSelections} cards.`);
       }
-
-      localStorage.setItem('selectedCards', JSON.stringify(selectedCards));
-      localStorage.setItem('chosenCount', window.gameState.chosenCount);
-
-      gameSocket.send(
-        JSON.stringify({
-          action: 'card_choice',
-          card_id: card_id,
-          card_status: card.dataset.isChosen === 'true',
-        }),
-      );
+      card.dataset.isChosen = 'true';
+      card.style.border = '2px solid yellow';
+      if (!selectedCards.includes(card_id)) selectedCards.push(card_id);
     }
+
+    localStorage.setItem('selectedCards', JSON.stringify(selectedCards));
+
+    window.gameState.chosenCount = getChosenCount();
+
+    gameSocket.send(
+      JSON.stringify({
+        action: 'card_choice',
+        card_id: card_id,
+        selected_cards: selectedCards,
+        card_status: card.dataset.isChosen === 'true',
+      }),
+    );
   }
 
   function startCountdown(duration, startTime) {

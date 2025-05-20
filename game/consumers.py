@@ -10,13 +10,16 @@ from game.utils.hints_logic import add_hint, get_last_hint
 from django.core.cache import cache
 from django.db import transaction
 
-
 class GameConsumer(WebsocketConsumer):
     def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['id']
         self.game_group_name = f'game_{self.game_id}'
         self.username = self.scope["session"].get("username")
 
+        self.cache_key = f'game_{self.game_id}_selected_cards'
+        if not cache.get(self.cache_key):
+            cache.set(self.cache_key, [], timeout=None)
+        
         async_to_sync(self.channel_layer.group_add)(
             self.game_group_name,
             self.channel_name
@@ -26,6 +29,9 @@ class GameConsumer(WebsocketConsumer):
         self.event_dispatcher = GameEventDispatcher(self.channel_layer, self.game_group_name, self.send)
         self.event_processor = GameEventProcessor(self.game_id)
         self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher, self.event_processor)
+
+        selected_cards = cache.get(self.cache_key, [])
+        self.event_dispatcher.broadcast_cards(selected_cards)
 
         self.event_dispatcher.new_player(self.game_id)
 
@@ -71,12 +77,18 @@ class GameConsumer(WebsocketConsumer):
 
         action = data.get("action")
         
-        if action == "card_choice" and phase_name == "round_phase":
-            self.event_dispatcher.card_choice(
-                username, 
-                card_id=data.get("card_id"), 
-                card_status=data.get("card_status")
-            )
+        if action == 'card_choice':
+            chosen = data['card_status']
+            cid = data['card_id']
+            
+            with cache.lock(f'card_lock_{self.game_id}'):
+                selected_cards = cache.get(self.cache_key, [])
+                if chosen and cid not in selected_cards:
+                    selected_cards.append(cid)
+                elif not chosen and cid in selected_cards:
+                    selected_cards.remove(cid)
+                cache.set(self.cache_key, selected_cards, timeout=None)
+            self.event_dispatcher.broadcast_cards(selected_cards)
         elif action == "hint_submit" and phase_name == "hint_phase":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
             self.event_processor.save_submitted_hints(data)
@@ -85,6 +97,7 @@ class GameConsumer(WebsocketConsumer):
             data["team"] = phase.team
             payload = self.event_processor.save_picked_words(data)
             if payload:
+                self.reset_round_state()
                 self.event_dispatcher.send_game_over(payload)
 
     def player_join(self, event):
@@ -107,6 +120,9 @@ class GameConsumer(WebsocketConsumer):
 
     def game_over(self, event):
         self.event_dispatcher.game_over(event)
+    
+    def selected_cards(self, event):
+        self.event_dispatcher.selected_cards(event)
 
 @dataclass
 class Phase:
@@ -337,6 +353,21 @@ class GameEventDispatcher:
                 "payload": payload
             }
         )
+
+    def broadcast_cards(self, selected_cards):
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group_name,
+            {
+                'type': 'selected_cards',
+                'cards': selected_cards
+            }
+        )
+
+    def selected_cards(self, event):
+        self.send_handler(text_data=json.dumps({
+            'action': 'selected_cards',
+            'cards': event['cards']
+            }))
 
     def player_join(self, event):
         leader_list = event['leader_list']

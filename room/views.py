@@ -56,9 +56,6 @@ def setup_room_view(request, id):
     current_player_username = request.session.get("username")
     current_player = Player.objects.filter(game=game_obj, username=current_player_username).first() if current_player_username else None
 
-    if not Card.objects.filter(game=game_obj).exists() and current_player.creator:
-        generate_cards(game_obj)
-
     context = {
         'choose_form': choose_form,
         'game_obj': game_obj,

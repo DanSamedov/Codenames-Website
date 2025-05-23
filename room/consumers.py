@@ -1,8 +1,8 @@
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 import json
-from room.models import Player, Game
-
+from room.models import Player, Game, Card
+from game.utils.cards_logic import generate_cards
 
 class RoomConsumer(WebsocketConsumer):
     def connect(self):
@@ -32,7 +32,6 @@ class RoomConsumer(WebsocketConsumer):
             self.channel_name
         )
 
-
     def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
         role = data.get('role')
@@ -49,7 +48,6 @@ class RoomConsumer(WebsocketConsumer):
 
         elif data["action"] == "start_game":
             self.start_game(room_id)
-
 
     def change_team(self, username, role, team):
         current_player = Player.objects.filter(game=self.room_id, username=username).first()
@@ -71,9 +69,11 @@ class RoomConsumer(WebsocketConsumer):
                 }
             )
 
-
     def start_game(self, room_id):
+        game_obj = Game.objects.get(pk=room_id)
         if Player.objects.filter(game=room_id).count() == Player.objects.filter(game=room_id, ready=True).count():
+            if not Card.objects.filter(game=game_obj).exists():
+                generate_cards(game_obj)
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
@@ -91,7 +91,6 @@ class RoomConsumer(WebsocketConsumer):
                 }
             )
 
-
     def player_join(self, event):
         username = event['username']
 
@@ -99,7 +98,6 @@ class RoomConsumer(WebsocketConsumer):
             'action': 'player_join',
             'username': username
         }))
-
 
     def team_choice(self, event):
         username = event['username']
@@ -113,7 +111,6 @@ class RoomConsumer(WebsocketConsumer):
             'team': team,
         }))
 
-
     def redirect_players(self, event):
         room_id = event['room_id']
 
@@ -121,7 +118,6 @@ class RoomConsumer(WebsocketConsumer):
             'action':'redirect',
             "room_id": room_id,
         }))
-
 
     def unready_players(self, event):
         unready_players = event['unready_players']

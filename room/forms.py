@@ -45,5 +45,5 @@ class ChooseTeamForm(forms.Form):
         (False, 'Guesser')
     ]
 
-    team = forms.ChoiceField(choices=TEAM_CHOICE, widget=forms.RadioSelect, required=True)
-    role = forms.ChoiceField(choices=ROLE_CHOICE, widget=forms.RadioSelect, required=True)
+    team = forms.ChoiceField(choices=TEAM_CHOICE, widget=forms.RadioSelect, required=False)
+    role = forms.ChoiceField(choices=ROLE_CHOICE, widget=forms.RadioSelect, required=False)

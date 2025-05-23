@@ -16,9 +16,9 @@ class GameConsumer(WebsocketConsumer):
         self.game_group_name = f'game_{self.game_id}'
         self.username = self.scope["session"].get("username")
 
-        self.cache_key = f'game_{self.game_id}_selected_cards'
-        if not cache.get(self.cache_key):
-            cache.set(self.cache_key, [], timeout=None)
+        self.cache_selected_cards = f'game_{self.game_id}_selected_cards'
+        if not cache.get(self.cache_selected_cards):
+            cache.set(self.cache_selected_cards, [], timeout=None)
         
         async_to_sync(self.channel_layer.group_add)(
             self.game_group_name,
@@ -28,9 +28,9 @@ class GameConsumer(WebsocketConsumer):
 
         self.event_dispatcher = GameEventDispatcher(self.channel_layer, self.game_group_name, self.send)
         self.event_processor = GameEventProcessor(self.game_id)
-        self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher, self.event_processor)
+        self.phase_manager = PhaseManager(self.game_id, self.channel_layer, self.game_group_name, self.event_dispatcher, self.event_processor, self.cache_selected_cards)
 
-        selected_cards = cache.get(self.cache_key, [])
+        selected_cards = cache.get(self.cache_selected_cards, [])
         self.event_dispatcher.broadcast_cards(selected_cards)
 
         self.event_dispatcher.new_player(self.game_id)
@@ -82,12 +82,12 @@ class GameConsumer(WebsocketConsumer):
             cid = data['card_id']
             
             with cache.lock(f'card_lock_{self.game_id}'):
-                selected_cards = cache.get(self.cache_key, [])
+                selected_cards = cache.get(self.cache_selected_cards, [])
                 if chosen and cid not in selected_cards:
                     selected_cards.append(cid)
                 elif not chosen and cid in selected_cards:
                     selected_cards.remove(cid)
-                cache.set(self.cache_key, selected_cards, timeout=None)
+                cache.set(self.cache_selected_cards, selected_cards, timeout=None)
             self.event_dispatcher.broadcast_cards(selected_cards)
         elif action == "hint_submit" and phase_name == "hint_phase":
             self.event_dispatcher.hint_receive(data["hintWord"], data["hintNum"])
@@ -97,7 +97,6 @@ class GameConsumer(WebsocketConsumer):
             data["team"] = phase.team
             payload = self.event_processor.save_picked_words(data)
             if payload:
-                self.reset_round_state()
                 self.event_dispatcher.send_game_over(payload)
 
     def player_join(self, event):
@@ -157,7 +156,7 @@ class Phase:
         }
 
 class PhaseManager:
-    def __init__(self, game_id, channel_layer, game_group_name, event_dispatcher, event_processor):
+    def __init__(self, game_id, channel_layer, game_group_name, event_dispatcher, event_processor, cache_selected_cards):
         self.game_id = game_id
         self.cache_prefix = f"game_{self.game_id}"
         self.channel_layer = channel_layer
@@ -165,6 +164,7 @@ class PhaseManager:
         self.event_dispatcher = event_dispatcher
         self.event_processor = event_processor
         self.current_phase = None
+        self.cache_selected_cards = cache_selected_cards
 
     def set_phase(self, phase_name: str, duration: int, team: str):
         self.current_phase = Phase(name=phase_name, duration=duration, team=team)
@@ -196,6 +196,14 @@ class PhaseManager:
 
         return self.current_phase
 
+    @property
+    def selected_cards(self):
+        return cache.get(self.cache_selected_cards, [])
+
+    @selected_cards.setter
+    def selected_cards(self, value):
+        cache.set(self.cache_selected_cards, value, timeout=None)
+
     def _on_phase_expire(self, phase: Phase):
         phase_name = phase.name
         phase_team = phase.team
@@ -212,12 +220,14 @@ class PhaseManager:
             or phase.team != phase_team):
             return
         
+        self.selected_cards = []
         next_team = "Red" if phase_team == "Blue" else "Blue"
 
         if phase_name == "hint_phase":
             self.set_phase(phase_name="round_phase", duration=20, team=phase.team)
         else:
             self.event_dispatcher.send_reveal_cards()
+            self.event_dispatcher.broadcast_cards(self.selected_cards)
             self.set_phase(
                 phase_name="hint_phase",
                 duration=10,

@@ -52,21 +52,16 @@
         playerElement.querySelector('.player-team').textContent =
           'Team: ' + team;
       }
+    } else if (data.action === 'restrict_choice') {
+      alert('You cant switch teams or roles when game has started');
     } else if (data.action === 'redirect') {
       window.location.href = '/game/' + data.room_id;
     } else if (data.action === 'unready') {
-      const unready_players = data['unready_players'];
       const creator = data['creator'];
       const currentUser = '{{ current_player.username }}';
 
-      if (unready_players.includes(currentUser)) {
-        let form = document.querySelector('#choose-team-form');
-
-        if (form) {
-          form.reportValidity();
-        }
-      } else if (creator === currentUser) {
-        window.alert('Wait until all players choose teams');
+      if (creator === currentUser) {
+        alert('Wait until all players choose teams');
       }
     } else if ((data.action = 'player_join')) {
       const username = data['username'];
@@ -98,14 +93,11 @@
       form.onsubmit = function (event) {
         event.preventDefault();
 
-        roomSocket.send(
-          JSON.stringify({
-            action: 'start_game',
-            room_id: room_id,
-          }),
-        );
+        startGameMessage();
       };
     }
+    makeRadiosTogglable('team');
+    makeRadiosTogglable('role');
   });
 
   document.querySelector('#choose-team-form').onsubmit = function (event) {
@@ -115,8 +107,8 @@
   function submitTeamChoice(event) {
     event.preventDefault();
 
-    // const currentRole = '{{ current_player.leader }}';
-    // const currentTeam = '{{ current_player.team }}';
+    const currentRole = '{{ current_player.leader }}';
+    const currentTeam = '{{ current_player.team }}';
 
     const selectedRoleInput = document.querySelector(
       'input[name="role"]:checked',
@@ -125,27 +117,13 @@
       'input[name="team"]:checked',
     );
 
-    const selectedRole = selectedRoleInput.value;
-    const selectedTeam = selectedTeamInput.value;
+    const selectedRole = selectedRoleInput?.value || currentRole;
+    const selectedTeam = selectedTeamInput?.value || currentTeam;
 
-    // let selectedRole = selectedRoleInput?.value || currentRole;
-    // let selectedTeam = selectedTeamInput?.value || currentTeam;
-
-    if (!selectedRole || !selectedTeam) {
-      alert('Please select both a team and a role');
+    if (selectedTeam === 'None') {
+      alert('Please select a team');
       return;
     }
-
-    // if (!selectedRole && !selectedTeam) {
-    //   alert('Please select both a team and a role');
-    //   return;
-    // } else if (!selectedRole) {
-    //   alert('Please select a role');
-    //   return;
-    // } else if (!selectedTeam) {
-    //   alert('Please select a team');
-    //   return;
-    // }
 
     roomSocket.send(
       JSON.stringify({
@@ -156,15 +134,33 @@
     );
 
     if ('{{ game_obj.starting_team }}' !== 'None') {
-      roomSocket.send(
-        JSON.stringify({
-          action: 'start_game',
-          room_id: room_id,
-        }),
-      );
+      startGameMessage();
     }
 
     document.querySelector('#choose-team-form').reset();
+  }
+
+  const startGameMessage = () => {
+    roomSocket.send(
+      JSON.stringify({
+        action: 'start_game',
+        room_id: room_id,
+      }),
+    );
+  };
+
+  function makeRadiosTogglable(name) {
+    let lastChecked = null;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(radio => {
+      radio.addEventListener('click', () => {
+        if (radio === lastChecked) {
+          radio.checked = false;
+          lastChecked = null;
+        } else {
+          lastChecked = radio;
+        }
+      });
+    });
   }
 </script>
 {% endblock %}

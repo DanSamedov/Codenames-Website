@@ -31,6 +31,7 @@
 {% block script %}
 <script>
   const room_id = '{{ game_obj.id }}';
+  const currentUser = '{{ current_player.username }}';
 
   const roomSocket = new WebSocket(
     'ws://' + window.location.host + '/ws/room/' + room_id + '/',
@@ -58,12 +59,11 @@
       window.location.href = '/game/' + data.room_id;
     } else if (data.action === 'unready') {
       const creator = data['creator'];
-      const currentUser = '{{ current_player.username }}';
 
       if (creator === currentUser) {
         alert('Wait until all players choose teams');
       }
-    } else if ((data.action = 'player_join')) {
+    } else if (data.action === 'player_join') {
       const username = data['username'];
 
       if (!document.querySelector(`#player-${username}`)) {
@@ -80,6 +80,9 @@
 
         playerList.appendChild(newPlayer);
       }
+    } else if (data.action === 'player_leave') {
+      const el = document.getElementById(`player-${data.username}`);
+      if (el) el.remove();
     }
   };
 
@@ -87,7 +90,26 @@
     console.error('Room was closed unexpectedly');
   };
 
+  // function loadRoomState() {}
+
+  window.addEventListener('beforeunload', () => {
+    roomSocket.send(
+      JSON.stringify({
+        action: 'leave',
+        username: currentUser,
+      }),
+    );
+  });
+
+  // window.addEventListener('pageshow', event => {
+  //   const nav = performance.getEntriesByType('navigation')[0]?.type;
+  //   if (event.persisted || nav === 'back_forward') {
+  //     loadRoomState();
+  //   }
+  // });
+
   document.addEventListener('DOMContentLoaded', function () {
+    // loadRoomState();
     const form = document.querySelector('#start-game-form');
     if (form) {
       form.onsubmit = function (event) {

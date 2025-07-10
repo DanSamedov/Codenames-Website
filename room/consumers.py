@@ -32,7 +32,7 @@ class RoomConsumer(WebsocketConsumer):
                 }
             )
 
-    def disconnect(self, close_code):
+    def disconnect(self, close_code):        
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
@@ -42,23 +42,31 @@ class RoomConsumer(WebsocketConsumer):
                 self.user_group_name,
                 self.channel_name
             )
-    
+
     def receive(self, text_data=None, bytes_data=None):
         data = json.loads(text_data)
         role = data.get('role')
         team = data.get('team')
         room_id = data.get('room_id')
 
-        username = self.scope["session"].get("username")
-        if not username:
+        if not self.username:
             self.send(text_data=json.dumps({"error": "User not authenticated"}))
             return
         
         if data["action"] == "change_team":
-            self.change_team(username, role, team)
+            self.change_team(self.username, role, team)
 
-        elif data["action"] == "start_game":
-            self.start_game(room_id, username)
+        if data["action"] == "start_game":
+            self.start_game(room_id, self.username)
+        
+        if data["action"] == "leave":
+            async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name,
+            {
+                "type": "player_leave",
+                "username": self.username
+            },
+        )
 
     def change_team(self, username, role, team):
         current_player = Player.objects.filter(game=self.room_id, username=username).first()
@@ -92,22 +100,22 @@ class RoomConsumer(WebsocketConsumer):
     def start_game(self, room_id, username):
         game_obj = Game.objects.get(pk=room_id)
         if Player.objects.filter(game=room_id).count() == Player.objects.filter(game=room_id, ready=True).count():
-            if not Card.objects.filter(game=game_obj).exists():
-                generate_cards(game_obj)
-                async_to_sync(self.channel_layer.group_send)(
-                    self.room_group_name,
-                    {
-                        "type": "redirect_players",
-                        "room_id": room_id,
-                    }
-                )
-            else:
+            if Card.objects.filter(game=game_obj).exists():
                 user_group = f"user_{username}"
                 async_to_sync(self.channel_layer.group_send)(
                     user_group,
                     {
                         "type": "redirect_players", 
                         "room_id": room_id
+                    }
+                )
+            else:
+                generate_cards(game_obj)
+                async_to_sync(self.channel_layer.group_send)(
+                    self.room_group_name,
+                    {
+                        "type": "redirect_players",
+                        "room_id": room_id,
                     }
                 )
         else:
@@ -161,4 +169,10 @@ class RoomConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps({
             'action': 'unready',
             'creator': creator
+        }))
+
+    def player_leave(self, event):
+        self.send(text_data=json.dumps({
+            'action': 'player_leave',
+            'username': event['username']
         }))

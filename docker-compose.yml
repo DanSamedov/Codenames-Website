@@ -14,9 +14,9 @@ services:
       - db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+        interval: 10s
+        timeout: 5s
+        retries: 20
     
   web:
     build: .
@@ -32,11 +32,6 @@ services:
       - "8000:8000"
     volumes:
       - .:/codenames
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     restart: always
 
   redis:
@@ -48,9 +43,9 @@ services:
         - redis_data:/data
       healthcheck:
         test: ["CMD", "redis-cli", "ping"]
-        interval: 5s
-        timeout: 3s
-        retries: 5
+        interval: 10s
+        timeout: 5s
+        retries: 20
 
 volumes:
   db_data:

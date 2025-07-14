@@ -30,11 +30,14 @@ services:
       MYSQL_PORT: 3306
     ports:
       - "8000:8000"
+    volumes:
+      - .:/codenames
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
+    restart: always
 
   redis:
       image: redis:7.2-alpine

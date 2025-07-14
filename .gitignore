@@ -64,3 +64,6 @@ logs/
 Pipfile.lock
 poetry.lock
 requirements.txt
+
+.kamal/*
+!.kamal/template

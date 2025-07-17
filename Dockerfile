@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
     libssl-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /codenames
@@ -14,8 +15,10 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
+RUN python manage.py collectstatic --noinput
+
 ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=codenames.settings
 
 EXPOSE 8000
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "codenames.asgi:application"]

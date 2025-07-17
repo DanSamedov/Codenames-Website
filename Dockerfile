@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
+
 WORKDIR /codenames
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
@@ -15,10 +16,9 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput
+RUN chmod +x /codenames/wait-for-it.sh
 
 ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=codenames.settings
 
 EXPOSE 8000
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "codenames.asgi:application"]

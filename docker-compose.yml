@@ -13,16 +13,19 @@ services:
       timeout: 5s
       retries: 3
 
-  backend:
-    build: .
+  web:
+    build:
+      context: .
+      dockerfile: codenames_app/Dockerfile
     command: >
-      bash -c "/codenames/wait-for-it.sh mysql:3306 -- /codenames/wait-for-it.sh redis:6379 -- daphne -b 0.0.0.0 -p 8000 codenames.asgi:application"
+      bash -c "/codenames/codenames_app/wait-for-it.sh mysql:3306 -- /codenames/codenames_app/wait-for-it.sh redis:6379 -- daphne -b 0.0.0.0 -p 8000 codenames.asgi:application"
     env_file: .env
     restart: always
     networks:
       - backend
+      - frontend
     volumes:
-      - static_volume:/codenames/staticfiles
+      - static_volume:/codenames/codenames_app/staticfiles
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/up" ]
       interval: 30s
@@ -50,37 +53,42 @@ services:
       retries: 3
 
   nginx:
-    image: nginx:1.29.0-alpine-slim
-    container_name: codenames_nginx
-    depends_on:
-      - backend
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - static_volume:/var/www/static:ro
-      - ./certbot/www:/var/www/certbot
-      - ./nginx/dhparam.pem:/etc/nginx/dhparam.pem:ro
-    restart: always
+      - static_volume:/codenames_app/static
+      - certbot_www:/var/www/certbot
+      - ./nginx/nginx-http.conf:/etc/nginx/conf.d/nginx.conf
+      # - certbot_conf:/etc/letsencrypt
+      # - ./nginx/ssl:/etc/nginx/ssl
+      # - ./nginx/ssl/dhparam.pem:/etc/nginx/dhparam.pem
+    depends_on:
+      - web
     networks:
-      - backend
       - frontend
+    restart: always
 
   certbot:
     image: certbot/certbot
-    container_name: codenames_certbot
     volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot; done'"
+      - certbot_www:/var/www/certbot
+      - certbot_conf:/etc/letsencrypt
+    networks:
+      - frontend
+    depends_on:
+      - nginx
+    command: certonly --webroot -w /var/www/certbot --email danasamedov@email.com --agree-tos --no-eff-email -d codenames.samedov.org -d www.codenames.samedov.org --keep-until-expiring --noninteractive
 
 volumes:
-  db_data:
+  mysql_data:
   redis_data:
   static_volume:
-  certbot_etc:
+  certbot_www:
+  certbot_conf:
 
 
 networks:

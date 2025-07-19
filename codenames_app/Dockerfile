@@ -10,13 +10,11 @@ RUN apt-get update && apt-get install -y \
 
 
 WORKDIR /codenames/codenames_app
-COPY requirements.txt .
+COPY ./codenames_app /codenames/codenames_app
+
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-RUN chmod +x /codenames/codenames_app/wait-for-it.sh
+RUN chmod +x wait-for-it.sh
 
 ENV PYTHONUNBUFFERED=1 \
     DJANGO_SETTINGS_MODULE=codenames.settings

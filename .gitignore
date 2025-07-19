@@ -8,7 +8,7 @@ __pycache__/
 *.pyd
 
 # Virtual environment
-venv/
+.venv/
 env/
 
 # Django migrations (ignore all except __init__.py)
@@ -64,5 +64,5 @@ logs/
 Pipfile.lock
 poetry.lock
 
-.kamal/*
-!.kamal/template
+certbot/*
+nginx/ssl/*

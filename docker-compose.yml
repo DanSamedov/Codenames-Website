@@ -61,11 +61,10 @@ services:
       - "443:443"
     volumes:
       - static_volume:/codenames_app/static
-      - certbot_www:/var/www/certbot
-      - ./nginx/nginx-http.conf:/etc/nginx/conf.d/nginx.conf
-      # - certbot_conf:/etc/letsencrypt
-      # - ./nginx/ssl:/etc/nginx/ssl
-      # - ./nginx/ssl/dhparam.pem:/etc/nginx/dhparam.pem
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - web
     networks:
@@ -75,16 +74,16 @@ services:
   certbot:
     image: certbot/certbot
     volumes:
-      - certbot_www:/var/www/certbot
-      - certbot_conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     networks:
       - frontend
     depends_on:
       - nginx
-    command: certonly --webroot -w /var/www/certbot --email danasamedov@email.com --agree-tos --no-eff-email -d codenames.samedov.org -d www.codenames.samedov.org --keep-until-expiring --noninteractive
+    command: certonly --webroot -w /var/www/certbot --email danasamedov@email.com --agree-tos --no-eff-email -d codenames.samedov.org --keep-until-expiring --noninteractive
 
 volumes:
-  mysql_data:
+  db_data:
   redis_data:
   static_volume:
   certbot_www:

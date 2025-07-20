@@ -2,7 +2,7 @@ services:
   mysql:
     image: mysql:8.0
     restart: always
-    env_file: .env
+    env_file: .env.prod
     volumes:
       - db_data:/var/lib/mysql
     networks:
@@ -16,10 +16,10 @@ services:
   web:
     build:
       context: .
-      dockerfile: codenames_app/Dockerfile
+      dockerfile: codenames_app/Dockerfile.prod
     command: >
       bash -c "/codenames/codenames_app/wait-for-it.sh mysql:3306 -- /codenames/codenames_app/wait-for-it.sh redis:6379 -- daphne -b 0.0.0.0 -p 8000 codenames.asgi:application"
-    env_file: .env
+    env_file: .env.prod
     restart: always
     networks:
       - backend
@@ -40,7 +40,7 @@ services:
   redis:
     image: redis:7.2-alpine
     restart: always
-    env_file: .env
+    env_file: .env.prod
     command: redis-server --requirepass ${REDIS_PASSWORD} --bind 0.0.0.0
     volumes:
       - redis_data:/data
@@ -69,6 +69,8 @@ services:
       - web
     networks:
       - frontend
+    environment:
+      - WEBSOCKET_HOST=ws://web:8000
     restart: always
 
   certbot:

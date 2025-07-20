@@ -23,6 +23,9 @@ db.sqlite3
 # Django secret key & local settings
 .env
 *.env
+.env.dev
+.env.prod
+.env.*
 config/settings_local.py
 
 # Logs

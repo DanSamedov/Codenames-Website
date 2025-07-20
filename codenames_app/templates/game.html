@@ -68,8 +68,13 @@
     sessionStorage.setItem(`cardDict_${gameId}`, JSON.stringify(cardDict));
   }
 
+  function getWebSocketUrl(path) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${path}`;
+  }
+
   const gameSocket = new WebSocket(
-    'ws://' + window.location.host + '/ws/game/' + gameId + '/',
+    getWebSocketUrl('/ws/room/' + room_id + '/')
   );
 
   window.gameState = {
@@ -84,6 +89,14 @@
 
   gameSocket.onclose = function (e) {
     console.error('Room was closed unexpectedly');
+  };
+
+  gameSocket.onopen = function(e) {
+  console.log("WebSocket connection established");
+  };
+
+  gameSocket.onerror = function(error) {
+    console.error("WebSocket error:", error);
   };
 
   gameSocket.onmessage = function (e) {

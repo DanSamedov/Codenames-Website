@@ -33,9 +33,26 @@
   const room_id = '{{ game_obj.id }}';
   const currentUser = '{{ current_player.username }}';
 
+  function getWebSocketUrl(path) {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}${path}`;
+  }
+
   const roomSocket = new WebSocket(
-    'ws://' + window.location.host + '/ws/room/' + room_id + '/',
+    getWebSocketUrl('/ws/room/' + room_id + '/')
   );
+
+  roomSocket.onopen = function(e) {
+    console.log("WebSocket connection established");
+  };
+
+  roomSocket.onclose = function(e) {
+    console.log("WebSocket connection closed", e);
+  };
+
+  roomSocket.onerror = function(error) {
+    console.error("WebSocket error:", error);
+  };
 
   roomSocket.onmessage = function (e) {
     const data = JSON.parse(e.data);

@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - name: Checkout code
@@ -20,11 +21,38 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          set -e
           cd ~/codenames
+
+          echo "Pulling latest code"
+
+          git reset --hard HEAD
           git pull origin main
-          docker compose down
+
+          echo "Rebuilding containers"
+
+          docker compose down --remove-orphans
           docker compose up -d --build
+
+          echo "Waiting for mysql, redis, and web containers to be healthy..."
+
+          services=(mysql redis web)
+          for service in "${services[@]}"; do
+            container_id=$(docker compose ps -q $service)
+            echo "⏳ Waiting for $service (container: $container_id)..."
+            timeout 120s bash -c "until docker inspect -f '{{.State.Health.Status}}' $container_id | grep -q 'healthy'; do sleep 5; done" || {
+              echo "❌ $service failed to start!"
+              docker logs $container_id
+              exit 1
+            }
+            echo "$service is healthy"
+          done
+
+          echo "Running Django management commands"
+
           docker compose exec -T web python manage.py makemigrations
           docker compose exec -T web python manage.py migrate
           docker compose exec -T web python manage.py collectstatic --noinput
           docker compose exec -T web python manage.py load_words
+
+          echo "Deployment successful"

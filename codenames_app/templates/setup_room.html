@@ -104,8 +104,6 @@
     console.error('Room was closed unexpectedly');
   };
 
-  // function loadRoomState() {}
-
   window.addEventListener('beforeunload', () => {
     roomSocket.send(
       JSON.stringify({
@@ -115,15 +113,15 @@
     );
   });
 
-  // window.addEventListener('pageshow', event => {
-  //   const nav = performance.getEntriesByType('navigation')[0]?.type;
-  //   if (event.persisted || nav === 'back_forward') {
-  //     loadRoomState();
-  //   }
-  // });
+  window.addEventListener('pageshow', event => {
+    const nav = performance.getEntriesByType('navigation')[0]?.type;
+    if (event.persisted || nav === 'back_forward') {
+      setTimeout(() => window.location.reload(), 50);
+      //start game button visually-hidden
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', function () {
-    // loadRoomState();
     const form = document.querySelector('#start-game-form');
     if (form) {
       form.onsubmit = function (event) {
@@ -198,5 +196,26 @@
       });
     });
   }
+
+  function updatePlayerList(players) {
+    const playerList = document.querySelector('ul');
+    playerList.innerHTML = '';
+    
+    players.forEach(player => {
+      const newPlayer = document.createElement('li');
+      newPlayer.id = `player-${player.username}`;
+      newPlayer.className = `player-card ${player.team || ''}`;
+      newPlayer.innerHTML = `
+        <h3 class="player-nickname">${player.username}</h3>
+        <p class="player-meta">
+          <span class="badge creator-${player.is_creator}">Creator</span>
+          <span class="badge leader-${player.is_leader}">Leader</span>
+          <span class="badge team-${player.team}">${player.team || 'No Team'}</span>
+        </p>
+      `;
+      playerList.appendChild(newPlayer);
+    });
+  }
+
 </script>
 {% endblock %}

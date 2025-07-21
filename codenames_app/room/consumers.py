@@ -68,6 +68,10 @@ class RoomConsumer(WebsocketConsumer):
             },
         )
 
+        if data["action"] == "get_state":
+            players = Player.objects.filter(game=self.room_id)
+            self.send_state(players)
+
     def change_team(self, username, role, team):
         current_player = Player.objects.filter(game=self.room_id, username=username).first()
 
@@ -176,3 +180,9 @@ class RoomConsumer(WebsocketConsumer):
             'action': 'player_leave',
             'username': event['username']
         }))
+
+    async def send_state(self, players):        
+        self.send_json({
+            'action': 'state_update',
+            'players': players,
+        })

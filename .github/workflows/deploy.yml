@@ -31,8 +31,8 @@ jobs:
 
           echo "Rebuilding containers"
 
-          docker compose down --remove-orphans
-          docker compose up -d --build
+          docker compose -f docker-compose.prod.yml down --remove-orphans
+          docker compose -f docker-compose.prod.yml up -d --build
 
           echo "Waiting for mysql, redis, and web containers to be healthy..."
 
@@ -50,9 +50,9 @@ jobs:
 
           echo "Running Django management commands"
 
-          docker compose exec -T web python manage.py makemigrations
-          docker compose exec -T web python manage.py migrate
-          docker compose exec -T web python manage.py collectstatic --noinput
-          docker compose exec -T web python manage.py load_words
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py makemigrations
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+          docker compose -f docker-compose.prod.yml exec -T web python manage.py load_words
 
           echo "Deployment successful"

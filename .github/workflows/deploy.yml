@@ -24,35 +24,37 @@ jobs:
           set -e
           cd ~/codenames
 
-          echo "Pulling latest code"
-
           git reset --hard HEAD
           git pull origin main
 
           echo "Rebuilding containers"
-
           docker compose -f docker-compose.prod.yml down --remove-orphans
           docker compose -f docker-compose.prod.yml up -d --build
 
-          echo "Waiting for mysql, redis, and web containers to be healthy..."
+          echo "Waiting for containers to be healthy..."
+          for service in mysql redis web; do
+            container_id=$(docker compose -f docker-compose.prod.yml ps -q $service)
+            echo "Waiting for $service..."
 
-          services=(mysql redis web)
-          for service in "${services[@]}"; do
-            container_id=$(docker compose ps -q $service)
-            echo "⏳ Waiting for $service (container: $container_id)..."
-            timeout 120s bash -c "until docker inspect -f '{{.State.Health.Status}}' $container_id | grep -q 'healthy'; do sleep 5; done" || {
-              echo "❌ $service failed to start!"
+            timeout 120s bash -c "
+              until [ \"\$(docker inspect -f '{{.State.Health.Status}}' $container_id 2>/dev/null)\" = 'healthy' ]; do
+                sleep 5
+              done
+            " || {
+              echo "$service did not become healthy in time!"
               docker logs $container_id
               exit 1
             }
-            echo "$service is healthy"
+
+            echo "$service is healthy."
           done
 
-          echo "Running Django management commands"
+          echo "Running Django commands..."
+          docker compose -f docker-compose.prod.yml exec -T web bash -c "
+            python manage.py check --deploy &&
+            python manage.py makemigrations --no-input &&
+            python manage.py migrate --no-input &&
+            python manage.py collectstatic --no-input --clear
+          "
 
-          docker compose -f docker-compose.prod.yml exec -T web python manage.py makemigrations
-          docker compose -f docker-compose.prod.yml exec -T web python manage.py migrate
-          docker compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
-          docker compose -f docker-compose.prod.yml exec -T web python manage.py load_words
-
-          echo "Deployment successful"
+          echo "Deployment successful!"

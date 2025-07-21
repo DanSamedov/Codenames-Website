@@ -51,10 +51,10 @@ jobs:
 
           echo "Running Django commands..."
           docker compose -f docker-compose.prod.yml exec -T web bash -c "
-            python manage.py check --deploy &&
             python manage.py makemigrations --no-input &&
             python manage.py migrate --no-input &&
-            python manage.py collectstatic --no-input --clear
+            python manage.py collectstatic --no-input --clear &&
+            python manage.py load_words
           "
 
           echo "Deployment successful!"

@@ -33,13 +33,10 @@
   const room_id = '{{ game_obj.id }}';
   const currentUser = '{{ current_player.username }}';
 
-  function getWebSocketUrl(path) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}${path}`;
-  }
-
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
   const roomSocket = new WebSocket(
-    getWebSocketUrl('/ws/room/' + room_id + '/')
+    `${protocol}//${host}/ws/room/${room_id}/`
   );
 
   roomSocket.onopen = function(e) {

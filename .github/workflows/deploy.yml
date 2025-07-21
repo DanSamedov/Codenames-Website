@@ -1,0 +1,30 @@
+name: CI/CD for Codenames
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to Server via SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd /home/${{ secrets.SSH_USER }}/codenames
+          git pull origin main
+          docker compose down
+          docker compose up -d --build
+          docker compose exec -T web python manage.py makemigrations
+          docker compose exec -T web python manage.py migrate
+          docker compose exec -T web python manage.py collectstatic --noinput
+          docker compose exec -T web python manage.py load_words

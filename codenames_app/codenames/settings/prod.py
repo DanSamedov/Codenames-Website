@@ -3,6 +3,9 @@ import os
 
 CSRF_TRUSTED_ORIGINS = ['https://codenames.samedov.org']
 
+REDIS_HOST = os.getenv("REDIS_HOST", "redis") 
+REDIS_PORT = os.getenv("REDIS_PORT", "6379")
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
 REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/0"
 
 # Security settings

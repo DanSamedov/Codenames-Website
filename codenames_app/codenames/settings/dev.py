@@ -1,7 +1,6 @@
 from .base import *
 import os
 
-REDIS_URL = f"redis://:{REDIS_HOST}:{REDIS_PORT}/0"
 
 CORS_ALLOW_ALL_ORIGINS = True 
 
@@ -32,7 +31,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
+        "LOCATION": "redis://redis:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }

@@ -48,6 +48,12 @@
   const gameId = JSON.parse(
     document.getElementById('game-id-data').textContent,
   );
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  const gameSocket = new WebSocket(
+    `${protocol}//${host}/ws/game/${gameId}/`
+  );
+
   const initializedKey = `game_${gameId}_initialized`;
 
   const currentUserName = '{{ current_player.username }}';
@@ -67,15 +73,6 @@
     sessionStorage.setItem(initializedKey, 'true');
     sessionStorage.setItem(`cardDict_${gameId}`, JSON.stringify(cardDict));
   }
-
-  function getWebSocketUrl(path) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}${path}`;
-  }
-
-  const gameSocket = new WebSocket(
-    getWebSocketUrl('/ws/room/' + room_id + '/')
-  );
 
   window.gameState = {
     clockOffset: 0,

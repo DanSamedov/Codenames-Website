@@ -2,14 +2,7 @@ import os
 import environ
 from pathlib import Path
 
-env = environ.Env()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-env.read_env(os.path.join(BASE_DIR.parent, ".env"))
-
-# Load from .env
-SECRET_KEY = env("SECRET_KEY")
-DEBUG = env.bool("DEBUG", default=False)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 # Application definition
 INSTALLED_APPS = [
@@ -24,6 +17,7 @@ INSTALLED_APPS = [
     'codenames',
     'room',
     'game',
+    'landing',
 ]
 
 MIDDLEWARE = [
@@ -92,7 +86,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '/codenames/codenames_app/staticfiles'
-STATICFILES_DIRS = [BASE_DIR / 'static'] if DEBUG else []
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

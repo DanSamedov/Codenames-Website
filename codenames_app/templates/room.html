@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block styles %}
+ <link rel="stylesheet" href="{% static '/css/room.css/' %}" />
+{% endblock %}
+{% block content %}
+<h1>Game Room</h1>
+<p>Game ID: {{ game_obj.id }}</p>
+
+<h2>Players:</h2>
+<ul>
+  {% for player in player_obj %}
+  <li id="player-{{ player.username }}">
+    <h3 class="player-nickname">Nickname: {{ player.username }}</h3>
+    <p class="player-creator">Creator: {{ player.creator }}</p>
+    <p class="player-role">Leader: {{ player.leader }}</p>
+    <p class="player-team">Team: {{ player.team }}</p>
+  </li>
+  {% endfor %}
+</ul>
+
+<form method="POST" id="choose-team-form">
+  {% csrf_token %} {{ choose_form.as_p }}
+  <button type="submit" id="choose-team-submit" name="choose_team">Play</button>
+</form>
+
+{% if current_player.creator %}
+<form method="POST" id="start-game-form">
+  {% csrf_token %}
+  <button type="submit" id="start-game-btn" name="start_game">
+    Start the Game
+  </button>
+</form>
+{% endif %} {% endblock %}
+<!-- prettier-ignore -->
+{% block script %}
+<script>
+  window.roomConfig = {
+    roomId: '{{ game_obj.id }}',
+    currentUser: '{{ current_player.username }}',
+    currentRole: '{{ current_player.leader }}',
+    currentTeam: '{{ current_player.team }}',
+    startingTeam: '{{ game_obj.starting_team }}',
+  };
+</script>
+<script src="{% static '/js/room.js' %}"></script>
+{% endblock %}

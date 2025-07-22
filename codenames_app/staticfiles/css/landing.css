@@ -1,6 +1,6 @@
 :root {
     --color-text-white: #F1F1F1;
-    --color-button-main: #FF4C60;
+    --color-button-main: #FF4B60;
     --color-button-secondary: #2E97F4;
 }
 
@@ -41,7 +41,7 @@ button {
 }
 
 /* header */
-.header-section{
+.header-section {
     background-color: #151515;
 }
 
@@ -147,7 +147,7 @@ button {
     margin: 165px 0px;
 }
 
-.main-image{
+.main-image {
     width: 804px;
     height: 786px;
 }
@@ -216,14 +216,14 @@ button {
 }
 
 /* modal text */
-.modal-header{
+.modal-header {
     color: var(--color-text-white);
     font-size: 64px;
     margin-bottom: 64px;
     display: block;
 }
 
-.modal-text{
+.modal-text {
     color: var(--color-text-white);
     font-size: 32px;
     display: block;

@@ -43,5 +43,9 @@
     startingTeam: '{{ game_obj.starting_team }}',
   };
 </script>
-<script src="{% static '/js/room.js' %}"></script>
+<script src="{% static 'js/room/websocketManager.js' %}"></script>
+<script src="{% static 'js/room/messageHandler.js' %}"></script>
+<script src="{% static 'js/room/formHandler.js' %}"></script>
+<script src="{% static 'js/room/roomManager.js' %}"></script>
+<script src="{% static 'js/room/main.js' %}"></script>
 {% endblock %}

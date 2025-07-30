@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block styles %}
- <link rel="stylesheet" href="{% static '/css/game.css/' %}" />
+ <link rel="stylesheet" href="{% static '/css/game.css' %}" />
 {% endblock %}
 {% block content %}
 <h1>Game {{ game_obj.id }} Started</h1>
@@ -50,11 +50,25 @@
 {% endblock %}
 {% block script %}
 <script>
-    window.gameConfig = {
-    currentUser: '{{ current_player.username }}',
-    currentRole: '{{ current_player.leader }}',
-    currentTeam: '{{ current_player.team }}',
+  window.gameConfig = {
+    currentUser: '{{ current_player.username|escapejs }}',
+    currentRole: '{{ current_player.leader|yesno:"True,False" }}',
+    currentTeam: '{{ current_player.team|escapejs }}',
+    gameId: '{{ game_obj.id }}',
+    isLeader: '{{ current_player.leader|yesno:"true,false" }}'
   };
 </script>
-<script src="{% static '/js/game.js' %}"></script>
+
+<script src="{% static 'js/game/utils/constants.js' %}"></script>
+<script src="{% static 'js/game/core/config.js' %}"></script>
+<script src="{% static 'js/game/core/gameState.js' %}"></script>
+<script src="{% static 'js/game/core/storage.js' %}"></script>
+<script src="{% static 'js/game/managers/websocketManager.js' %}"></script>
+<script src="{% static 'js/game/managers/timerManager.js' %}"></script>
+<script src="{% static 'js/game/managers/cardManager.js' %}"></script>
+<script src="{% static 'js/game/managers/uiManager.js' %}"></script>
+<script src="{% static 'js/game/managers/hintManager.js' %}"></script>
+<script src="{% static 'js/game/handlers/messageHandler.js' %}"></script>
+<script src="{% static 'js/game/main.js' %}"></script>
+<script src="{% static 'js/game/game.js' %}"></script>
 {% endblock %}

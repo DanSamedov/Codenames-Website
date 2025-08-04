@@ -90,10 +90,10 @@ services:
 
   tailwind:
     image: node:20-alpine
+    build:
+      context: ./codenames_app/static/tailwind
     working_dir: /app/static/tailwind
     volumes:
-      - ./codenames_app/static/tailwind:/app/static/tailwind:ro
-      - tailwind_node_modules:/app/static/tailwind/node_modules
       - ./codenames_app/static/css:/app/static/css
     command: >
       sh -c "
@@ -111,7 +111,6 @@ volumes:
   static_volume:
   certbot_www:
   certbot_conf:
-  tailwind_node_modules:
 
 networks:
   backend:

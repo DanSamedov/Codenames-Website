@@ -91,12 +91,14 @@ services:
   tailwind:
     image: node:20-alpine
     working_dir: /app/static/tailwind
+    build:
+      context: ./codenames_app/static/tailwind
     volumes:
-      - ./static/tailwind:/app/static/tailwind:ro
-      - ./static/css:/app/static/css
+      - ./codenames_app/static/tailwind:/app/static/tailwind:ro
+      - ./codenames_app/static/css:/app/static/css
     command: >
       sh -c "
-        npm ci && \
+        npm ci &&
         npx tailwindcss \
           -c tailwind.config.js \
           -i tailwind.css \

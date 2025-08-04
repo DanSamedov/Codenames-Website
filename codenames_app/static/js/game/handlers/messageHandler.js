@@ -1,11 +1,13 @@
 class GameMessageHandler {
-    constructor(config, gameState, storageManager, cardManager, timerManager, uiManager) {
+    constructor(config, gameState, storageManager, cardManager, timerManager, uiManager, websocketManager) {
         this.config = config;
         this.gameState = gameState;
         this.storageManager = storageManager;
         this.cardManager = cardManager;
         this.timerManager = timerManager;
         this.uiManager = uiManager;
+        this.websocketManager = websocketManager;
+
     }
 
     handleMessage(data) {

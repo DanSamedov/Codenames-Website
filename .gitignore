@@ -1,26 +1,19 @@
-# =========================
-# 📌 Python & Django
-# =========================
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyo
 *.pyd
 
-# Virtual environment
 .venv/
 env/
 
-# Django migrations (ignore all except __init__.py)
 **/migrations/*.py
 !**/migrations/__init__.py
 **/migrations/*.pyc
 
-# Database files
 db.sqlite3
 *.sqlite3
 
-# Django secret key & local settings
 .env
 *.env
 .env.dev
@@ -28,25 +21,20 @@ db.sqlite3
 .env.*
 config/settings_local.py
 
-# Logs
 *.log
 logs/
 
-# Compiled CSS (SASS, SCSS, PostCSS)
 *.sass-cache/
 *.scssc
 *.css.map
 *.sass.map
 
-# Cache files
 .cache/
 .babelrc
 .eslintcache
 
-# Prettier cache file
 .prettier-cache
 
-# Optional: Ignore Prettier config if you don’t want to share it
 .prettierrc
 .prettierrc.json
 .prettierrc.yml
@@ -54,18 +42,14 @@ logs/
 .prettierrc.toml
 .prettierignore
 
-# =========================
-# 📌 Editor & OS Files
-# =========================
-# VS Code
 .vscode/
 *.code-workspace
 
-# =========================
-# 📌 Dependency Management
-# =========================
 Pipfile.lock
 poetry.lock
 
 certbot/*
 nginx/ssl/*
+
+node_modules/
+output.css

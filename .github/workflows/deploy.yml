@@ -11,50 +11,53 @@ jobs:
     timeout-minutes: 15
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Deploy to Server via SSH
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          set -e
-          cd ~/codenames
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd ~/codenames
 
-          git reset --hard HEAD
-          git pull origin main
+            git reset --hard HEAD
+            git pull origin main
 
-          echo "Rebuilding containers"
-          docker compose -f docker-compose.prod.yml down --remove-orphans
-          docker compose -f docker-compose.prod.yml up -d --build
+            echo "Building Tailwind CSS…"
+            docker compose -f docker-compose.prod.yml run --rm tailwind-build
 
-          echo "Waiting for containers to be healthy..."
-          for service in mysql redis web; do
-            container_id=$(docker compose -f docker-compose.prod.yml ps -q $service)
-            echo "Waiting for $service..."
+            echo "Rebuilding containers"
+            docker compose -f docker-compose.prod.yml down --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d --build
 
-            timeout 120s bash -c "
-              until [ \"\$(docker inspect -f '{{.State.Health.Status}}' $container_id 2>/dev/null)\" = 'healthy' ]; do
-                sleep 5
-              done
-            " || {
-              echo "$service did not become healthy in time!"
-              docker logs $container_id
-              exit 1
-            }
+            echo "Waiting for containers to be healthy..."
+            for service in mysql redis web; do
+              container_id=$(docker compose -f docker-compose.prod.yml ps -q $service)
+              echo "Waiting for $service..."
 
-            echo "$service is healthy."
-          done
+              timeout 120s bash -c "
+                until [ \"\$(docker inspect -f '{{.State.Health.Status}}' $container_id 2>/dev/null)\" = 'healthy' ]; do
+                  sleep 5
+                done
+              " || {
+                echo "$service did not become healthy in time!"
+                docker logs $container_id
+                exit 1
+              }
 
-          echo "Running Django commands..."
-          docker compose -f docker-compose.prod.yml exec -T web bash -c "
-            python manage.py makemigrations --no-input &&
-            python manage.py migrate --no-input &&
-            python manage.py collectstatic --no-input --clear &&
-            python manage.py load_words
-          "
+              echo "$service is healthy."
+            done
 
-          echo "Deployment successful!"
+            echo "Running Django commands..."
+            docker compose -f docker-compose.prod.yml exec -T web bash -c "
+              python manage.py makemigrations --no-input &&
+              python manage.py migrate --no-input &&
+              python manage.py collectstatic --no-input --clear &&
+              python manage.py load_words
+            "
+
+            echo "Deployment successful!"

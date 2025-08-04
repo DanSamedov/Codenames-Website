@@ -8,7 +8,16 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u$${MYSQL_USER}", "-p$${MYSQL_PASSWORD}" ]
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u$${MYSQL_USER}",
+          "-p$${MYSQL_PASSWORD}",
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -37,10 +46,21 @@ services:
     volumes:
       - redis_data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
+
+  tailwind:
+    image: node:20-alpine
+    working_dir: /app/static/tailwind
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./static/tailwind:/app/static/tailwind
+      - ./static/css:/app/static/css
+      - ./templates:/app/templates
+    command: sh ./tailwind-entrypoint.sh
 
 volumes:
   db_data:

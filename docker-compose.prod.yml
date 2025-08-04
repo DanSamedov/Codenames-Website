@@ -27,7 +27,7 @@ services:
     volumes:
       - static_volume:/codenames/codenames_app/staticfiles
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/up" ]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -51,7 +51,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -88,13 +88,28 @@ services:
       - nginx
     command: certonly --webroot -w /var/www/certbot --email danasamedov@email.com --agree-tos --no-eff-email -d codenames.samedov.org --keep-until-expiring --noninteractive
 
+  tailwind:
+    image: node:20-alpine
+    working_dir: /app/static/tailwind
+    volumes:
+      - ./static/tailwind:/app/static/tailwind:ro
+      - ./static/css:/app/static/css
+    command: >
+      sh -c "
+        npm ci && \
+        npx tailwindcss \
+          -c tailwind.config.js \
+          -i tailwind.css \
+          -o ../css/output.css \
+          --minify
+      "
+
 volumes:
   db_data:
   redis_data:
   static_volume:
   certbot_www:
   certbot_conf:
-
 
 networks:
   backend:

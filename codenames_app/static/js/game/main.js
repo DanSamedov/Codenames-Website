@@ -27,7 +27,8 @@ class GameManager {
                 this.storageManager,
                 this.cardManager,
                 this.timerManager,
-                this.uiManager
+                this.uiManager,
+                null
             );
             
             this.websocketManager = new window.GameWebSocketManager(
@@ -35,6 +36,7 @@ class GameManager {
                 this.messageHandler
             );
             
+            this.messageHandler.websocketManager = this.websocketManager;
             this.cardManager.websocketManager = this.websocketManager;
             this.timerManager.websocketManager = this.websocketManager;
             this.hintManager.websocketManager = this.websocketManager;

@@ -9,5 +9,4 @@ urlpatterns = [
     path('', include('landing.urls')),
     path('game/', include('game.urls')),
     path("up/", views.health_check, name="health_check"),
-    path('landing/', TemplateView.as_view(template_name="test.html")),
 ]

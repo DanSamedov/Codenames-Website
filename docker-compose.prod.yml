@@ -98,7 +98,7 @@ services:
       [
         "sh",
         "-c",
-        "npm install && npx tailwindcss -c tailwind.config.js -i tailwind.css -o ../css/output.css --minify",
+        "npm install && npx tailwindcss -c tailwind.config.js -i ../css/tailwind.css -o ../css/output.css --minify",
       ]
 
 volumes:

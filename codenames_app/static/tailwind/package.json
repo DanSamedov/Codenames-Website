@@ -2,11 +2,19 @@
     "name": "tailwind",
     "version": "1.0.0",
     "scripts": {
-        "build": "tailwindcss -i ../css/tailwind.css -o ../css/output.css --watch"
+        "build:landing": "tailwindcss -i ../css/landing.css -o ../css/dist/landing.css --minify",
+        "build:room": "tailwindcss -i ../css/room.css -o ../css/dist/room.css --minify",
+        "build:game": "tailwindcss -i ../css/game.css -o ../css/dist/game.css --minify",
+        "build": "npm run build:landing && npm run build:room && npm run build:game",
+        "watch:landing": "tailwindcss -i ../css/landing.css -o ../css/dist/landing.css --watch --poll",
+        "watch:room": "tailwindcss -i ../css/room.css -o ../css/dist/room.css --watch --poll",
+        "watch:game": "tailwindcss -i ../css/game.css -o ../css/dist/game.css --watch --poll",
+        "watch": "concurrently \"npm:watch:landing\" \"npm:watch:room\" \"npm:watch:game\""
     },
     "devDependencies": {
         "tailwindcss": "^3.3.0",
         "postcss": "^8.4.0",
-        "autoprefixer": "^10.4.0"
+        "autoprefixer": "^10.4.0",
+        "concurrently": "^8.0.0"
     }
 }

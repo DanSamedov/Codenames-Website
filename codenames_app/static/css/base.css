@@ -1,0 +1,46 @@
+@font-face {
+    font-display: swap;
+    font-family: 'Bebas Neue';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../fonts/bebas-neue-v15-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-display: swap;
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    src: url('../../fonts/roboto-mono-v30-latin-regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-display: swap;
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 700;
+    src: url('../../fonts/roboto-mono-v30-latin-700.woff2') format('woff2');
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --bg-color: #121212;
+    --primary-color: #dc2626;
+    --secondary-color: #3b82f6;
+    --text-light: #e5e7eb;
+    --text-dark: #4b5563;
+    --accent-color: #1f2937;
+}
+
+body {
+    font-family: "Roboto Mono", monospace;
+    background-color: var(--bg-color);
+    color: var(--text-light);
+}
+
+.bebas-neue {
+    font-family: "Bebas Neue", cursive;
+}

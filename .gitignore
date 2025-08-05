@@ -52,5 +52,5 @@ certbot/*
 nginx/ssl/*
 
 node_modules/
-output.css
 staticfiles/
+dist/

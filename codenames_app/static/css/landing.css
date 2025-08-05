@@ -1,0 +1,45 @@
+@import "base.css";
+
+.btn {
+    @apply px-8 py-3 rounded-none font-bold text-lg uppercase tracking-wider transition-all duration-300 ease-in-out;
+}
+
+.btn-primary {
+    @apply bg-[var(--primary-color)] text-white hover:bg-red-700;
+}
+
+.btn-secondary {
+    @apply bg-transparent border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] hover:bg-[var(--secondary-color)] hover:text-white;
+}
+
+.modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal-backdrop.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.input-field-primary:focus {
+    border-color: var(--primary-color) !important;
+    outline: none;
+}
+
+.input-field-primary:focus::placeholder {
+    color: var(--primary-color);
+}
+
+.input-field-secondary:focus {
+    border-color: var(--secondary-color) !important;
+    outline: none;
+}
+
+.input-field-secondary:focus::placeholder {
+    color: var(--secondary-color);
+}

@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>Codenames Online</title>
-    <link rel="stylesheet" href="{% static 'css/output.css' %}" />
+    <link rel="stylesheet" href="{% static 'css/dist/landing.css' %}" />
   </head>
   <body class="bg-[var(--bg-color)] text-[var(--text-light)]">
     <div class="min-h-screen flex flex-col">
@@ -109,7 +109,7 @@
 
     <div
       id="modal-mission-briefing"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
+      class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
     >
       <div
         class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-12 relative"
@@ -140,7 +140,7 @@
 
     <div
       id="modal-intel"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
+      class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
     >
       <div
         class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-12 relative"
@@ -172,7 +172,7 @@
     <!-- Establish Modal -->
     <div
       id="modal-establish"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
+      class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
     >
       <div
         class="w-full max-w-[880px] max-h-[90vh] overflow-auto bg-[#1A1A1A] rounded text-white p-6 sm:p-10 md:p-12 relative"
@@ -223,7 +223,7 @@
     <!-- Infiltrate Modal -->
     <div
       id="modal-infiltrate"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
+      class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
     >
       <div
         class="w-full max-w-[880px] max-h-[90vh] overflow-auto bg-[#1A1A1A] rounded text-white p-6 sm:p-10 md:p-12 relative"

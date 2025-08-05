@@ -1,0 +1,24 @@
+{% load static %}
+<header
+  class="w-full py-6 px-8 flex justify-between items-center header-border"
+>
+  <div class="container mx-auto flex justify-between items-center">
+    <a class="text-4xl bebas-neue tracking-widest" href="/">
+      <span class="text-[var(--light-text)]">CODENAMES</span>
+    </a>
+    <nav class="hidden md:flex items-center space-x-6">
+      <a
+        href="#"
+        data-open="modal-mission-briefing"
+        class="text-lg hover:text-[var(--primary-color)] transition-colors duration-300"
+        >Mission Briefing</a
+      >
+      <a
+        href="#"
+        data-open="modal-intel"
+        class="text-lg hover:text-[var(--secondary-color)] transition-colors duration-300"
+        >Intel</a
+      >
+    </nav>
+  </div>
+</header>

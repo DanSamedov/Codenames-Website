@@ -7,9 +7,16 @@
     <title>Codenames</title>
     {% block styles %} {% endblock %}
   </head>
-  <body>
-    {% block content%} {% endblock %}
+  <body
+    class="min-h-screen flex flex-col bg-[var(--bg-color)] text-[var(--text-light)]"
+  >
+    {% include "components/header.html" %}
     <!-- prettier-ignore -->
+    {% block content%} {% endblock %}
+
+    {% include "components/footer.html" %}
+    {% include "components/modals.html" %}
+
     {% block script %} {% endblock %}
   </body>
 </html>

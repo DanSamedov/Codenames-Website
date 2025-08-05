@@ -44,3 +44,19 @@ body {
 .bebas-neue {
     font-family: "Bebas Neue", cursive;
 }
+
+.header-border {
+    border-bottom: 2px solid;
+    border-image-source: linear-gradient(to right,
+            var(--primary-color),
+            var(--secondary-color));
+    border-image-slice: 1;
+}
+
+/* .footer-border{
+    border-top: 2px solid;
+    border-image-source: linear-gradient(to right,
+            var(--primary-color),
+            var(--secondary-color));
+    border-image-slice: 1;
+} */

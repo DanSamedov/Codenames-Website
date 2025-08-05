@@ -1,1 +1,82 @@
 @import "base.css";
+
+.team-container {
+    border-radius: 8px;
+    padding: 24px;
+    background-color: var(--accent-color);
+}
+
+.red-team {
+    border: 2px solid var(--primary-color);
+    box-shadow: 0 0 15px rgba(220, 38, 38, 0.3);
+}
+
+.blue-team {
+    border: 2px solid var(--secondary-color);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+.team-title {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.25rem;
+    letter-spacing: 0.05em;
+}
+
+.player-list {
+    list-style: none;
+    padding: 0;
+    min-height: 200px;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--text-dark);
+}
+
+.player-item:last-child {
+    border-bottom: none;
+}
+
+.role-selector select {
+    background-color: #2a2a2a;
+    border: 1px solid var(--text-dark);
+    border-radius: 4px;
+    color: var(--text-light);
+    padding: 4px 8px;
+}
+
+.join-team-btn {
+    background-color: transparent;
+    border: 1px solid;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-family: "Roboto Mono", monospace;
+    font-weight: 700;
+    width: 100%;
+    text-align: center;
+}
+
+.join-red {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.join-red:hover {
+    background-color: var(--primary-color);
+    color: var(--text-light);
+}
+
+.join-blue {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+.join-blue:hover {
+    background-color: var(--secondary-color);
+    color: var(--text-light);
+}

@@ -95,12 +95,7 @@ services:
       - ./codenames_app/static/tailwind:/app/static/tailwind
       - ./codenames_app/static/css:/app/static/css
       - ./codenames_app/templates:/app/templates
-    command:
-      [
-        "sh",
-        "-c",
-        "npm install && npx tailwindcss -c tailwind.config.js -i ../css/tailwind.css -o ../css/output.css --minify",
-      ]
+    command: ["sh", "-c", "npm install && npm run build"]
 
 volumes:
   db_data:

@@ -6,16 +6,6 @@
     background-color: var(--accent-color);
 }
 
-.red-team {
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 0 15px rgba(220, 38, 38, 0.3);
-}
-
-.blue-team {
-    border: 2px solid var(--secondary-color);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-}
-
 .team-title {
     font-family: 'Bebas Neue', cursive;
     font-size: 2.25rem;

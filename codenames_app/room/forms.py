@@ -1,16 +1,23 @@
 from django import forms
 
-
 class ChooseTeamForm(forms.Form):
-    TEAM_CHOICE = [
-        ('Blue', 'Team Blue'),
-        ('Red', 'Team Red')
+    ROLE_CHOICES = [
+        ('',    '--- Select role ---'),
+        ('False','Guesser'),
+        ('True', 'Leader'),
     ]
 
-    ROLE_CHOICE = [
-        (True, 'Leader'),
-        (False, 'Guesser')
-    ]
+    team = forms.CharField(widget=forms.HiddenInput(), required=True)
 
-    team = forms.ChoiceField(choices=TEAM_CHOICE, widget=forms.RadioSelect, required=False)
-    role = forms.ChoiceField(choices=ROLE_CHOICE, widget=forms.RadioSelect, required=False)
+    role = forms.TypedChoiceField(
+        choices=ROLE_CHOICES,
+        coerce=lambda val: val == 'True',
+        empty_value=None,
+        required=True,
+        error_messages={
+            'required': 'You must choose either Guesser or Leader.'
+        },
+        widget=forms.Select(attrs={
+            'class': 'bg-[var(--accent-color)] border-[var(--text-dark)] rounded'
+        })
+    )

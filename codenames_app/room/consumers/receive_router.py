@@ -1,7 +1,6 @@
 import json
 import logging
 from asgiref.sync import async_to_sync
-from room.models import Player
 from .actions import change_team, start_game
 
 logger = logging.getLogger(__name__)

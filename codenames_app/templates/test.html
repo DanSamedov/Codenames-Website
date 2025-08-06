@@ -12,86 +12,64 @@
       - Join a team and select your role to begin the operation.
     </span>
   </div>
-  <div class="grid md:grid-cols-2 gap-8 lg:gap-16">
-    <div class="team-container red-team flex flex-col">
+  <form
+    method="POST"
+    id="choose-team-form"
+    class="grid md:grid-cols-2 gap-8 lg:gap-16"
+  >
+    {% csrf_token %} {{ choose_form.team }}
+    <div class="team-container red-box-shadow flex flex-col">
       <h3 class="team-title text-[var(--primary-color)] mb-6">RED TEAM</h3>
-      <ul class="player-list space-y-2 flex-grow">
-        <li class="player-item">
-          <span class="player-name font-bold">Alex "Viper" Mercer</span>
-          <div class="role-selector">
-            <span class="text-[var(--text-light)] font-bold">Leader</span>
-          </div>
-        </li>
-        <li class="player-item">
-          <span class="player-name">Danylo Samedov</span>
-          <div class="role-selector">
-            <select
-              class="bg-[var(--accent-color)] border-[var(--text-dark)] rounded"
-              name="role"
-            >
-              <option value="guesser">Guesser</option>
-              <option value="leader">Leader</option>
-            </select>
-          </div>
-        </li>
-        <li class="player-item">
-          <span class="player-name">John "Rogue" Doe</span>
-          <div class="role-selector">
-            <span class="text-[var(--text-light)]">Guesser</span>
-          </div>
-        </li>
-        <li class="player-item opacity-50">
-          <span class="player-name text-[var(--text-dark)]">Player Four</span>
-          <div class="role-selector"></div>
-        </li>
-      </ul>
+      <ul class="player-list space-y-2 flex-grow" id="Red"></ul>
       <div class="mt-auto pt-4">
-        <button class="join-team-btn join-red">Join Red Team</button>
+        <button type="button" class="join-team-btn join-red" data-team="Red">
+          Join Red Team
+        </button>
       </div>
     </div>
-    <div class="team-container blue-team flex flex-col">
+    <div class="team-container blue-box-shadow flex flex-col">
       <h3 class="team-title text-[var(--secondary-color)] mb-6">BLUE TEAM</h3>
-      <ul class="player-list space-y-2 flex-grow">
-        <li class="player-item">
-          <span class="player-name">Jane "Phoenix" Smith</span>
-          <div class="role-selector">
-            <select
-              class="bg-[var(--accent-color)] border-[var(--text-dark)] rounded"
-              name="role"
-            >
-              <option value="guesser">Guesser</option>
-              <option value="leader">Leader</option>
-            </select>
-          </div>
-        </li>
-        <li class="player-item">
-          <span class="player-name font-bold">Eva "Ghost" Rostova</span>
-          <div class="role-selector">
-            <span class="text-[var(--text-light)] font-bold">Leader</span>
-          </div>
-        </li>
-        <li class="player-item opacity-50">
-          <span class="player-name text-[var(--text-dark)]">Player Five</span>
-          <div class="role-selector"></div>
-        </li>
-        <li class="player-item opacity-50">
-          <span class="player-name text-[var(--text-dark)]">Player Six</span>
-          <div class="role-selector"></div>
-        </li>
-      </ul>
+      <ul class="player-list space-y-2 flex-grow" id="Blue"></ul>
       <div class="mt-auto pt-4">
-        <button class="join-team-btn join-blue">Join Blue Team</button>
+        <button type="button" class="join-team-btn join-blue" data-team="Blue">
+          Join Blue Team
+        </button>
       </div>
     </div>
-  </div>
+    <template id="role-template">
+      <div class="role-selector">{{ choose_form.role }}</div>
+    </template>
+  </form>
+  {% if current_player.creator %}
   <div class="mt-16 flex justify-center">
-    <button
-      class="bebas-neue w-full md:w-auto px-12 py-4 text-2xl tracking-wider rounded bg-[var(--primary-color)] text-[var(--text-light)] hover:bg-red-700 transition-colors"
-    >
-      Start the Game
-    </button>
+    <form method="POST" id="start-game-form">
+      {% csrf_token %}
+      <button
+        type="submit"
+        id="start-game-btn"
+        name="start_game"
+        class="bebas-neue w-full md:w-auto px-12 py-4 text-2xl tracking-wider rounded bg-[var(--primary-color)] text-[var(--text-light)] hover:bg-red-700 transition-colors red-box-shadow"
+      >
+        Start the Game
+      </button>
+    </form>
   </div>
+  {% endif %}
 </main>
 {% endblock %} {% block script %}
 <script src="{% static 'js/landing/landing.js' %}"></script>
+<script>
+  window.roomConfig = {
+    roomId: "{{ game_obj.id }}",
+    currentUser: "{{ current_player.username }}",
+    currentRole: "{{ current_player.leader }}",
+    currentTeam: "{{ current_player.team }}",
+    startingTeam: "{{ game_obj.starting_team }}",
+  };
+</script>
+<script src="{% static 'js/room/websocketManager.js' %}"></script>
+<script src="{% static 'js/room/messageHandler.js' %}"></script>
+<script src="{% static 'js/room/formHandler.js' %}"></script>
+<script src="{% static 'js/room/roomManager.js' %}"></script>
+<script src="{% static 'js/room/main.js' %}"></script>
 {% endblock %}

@@ -1,6 +1,5 @@
 import logging
 from channels.generic.websocket import WebsocketConsumer
-from asgiref.sync import async_to_sync
 from .connections import connect, disconnect
 from .receive_router import receive
 from .group_events import GroupEventHandlers

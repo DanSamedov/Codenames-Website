@@ -16,23 +16,20 @@ class FormHandler {
     const teamInput = form?.querySelector('input[name="team"]');
     const tpl = document.getElementById("role-template");
 
-    // Step 1: Clicking a Join button
     document.querySelectorAll(".join-team-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
 
-        this.selectedTeam = btn.dataset.team; // Red or Blue
+        this.selectedTeam = btn.dataset.team;
         if (teamInput) {
-          teamInput.value = this.selectedTeam; // set hidden field
+          teamInput.value = this.selectedTeam;
         }
 
-        // Update UI to show selection state
         this.updateTeamSelectionUI(this.selectedTeam);
         this.insertRoleChooserIntoList(this.selectedTeam, tpl);
       });
     });
 
-    // Step 2: When the user chooses a role, send via WebSocket instead of form submission
     if (form) {
       form.addEventListener("change", (e) => {
         if (e.target.matches('select[name="role"]') && e.target.value) {
@@ -42,11 +39,16 @@ class FormHandler {
         }
       });
 
-      // Prevent traditional form submission
       form.addEventListener("submit", (e) => {
         e.preventDefault();
       });
     }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.selectedTeam) {
+        this.cancelTeamSelection();
+      }
+    });
   }
 
   initializeStartGameForm() {
@@ -56,33 +58,32 @@ class FormHandler {
     }
   }
 
-  // New method to handle team selection via WebSocket
   handleTeamSelection(selectedRole, selectedTeam) {
     if (selectedTeam === "None" || !selectedTeam) {
       alert("Please select a team");
       return;
     }
 
-    // Send team change via WebSocket
     this.websocketManager.send({
       action: "change_team",
       role: selectedRole,
       team: selectedTeam,
     });
 
-    // Auto-start game if conditions are met
     if (this.config.startingTeam !== "None") {
       this.startGame();
     }
 
-    // Reset form
     const form = document.querySelector("#choose-team-form");
     if (form) {
       form.reset();
     }
+
+    this.resetTeamSelectionUI();
+
+    this.removeRoleChooser(this.selectedTeam);
   }
 
-  // Keep the existing start game handler
   handleStartGame(event) {
     event.preventDefault();
     this.startGame();
@@ -95,7 +96,6 @@ class FormHandler {
     });
   }
 
-  // Function to update UI when team is selected
   updateTeamSelectionUI(team) {
     const allContainers = document.querySelectorAll(".team-container");
     const allButtons = document.querySelectorAll(".join-team-btn");
@@ -106,7 +106,6 @@ class FormHandler {
 
       if (isSelected) {
         container.classList.add("selected-team");
-        // Optional: Add visual feedback for selected team
         container.style.transform = "scale(1.02)";
         container.style.boxShadow = "0 8px 25px rgba(0,0,0,0.15)";
       } else {
@@ -116,7 +115,6 @@ class FormHandler {
       }
     });
 
-    // Disable all join buttons after selection
     allButtons.forEach((button) => {
       if (button.dataset.team === team) {
         button.textContent = `Selected: ${team} Team`;
@@ -124,6 +122,8 @@ class FormHandler {
         button.style.border = "0px";
         button.style.color = "white";
         button.style.cursor = "not-allowed";
+        button.disabled = true;
+        button.style.pointerEvents = "none";
       } else {
         button.disabled = true;
         button.style.opacity = "0.5";
@@ -152,5 +152,61 @@ class FormHandler {
 
     ul.appendChild(li);
     clone.focus();
+  }
+
+  cancelTeamSelection() {
+    if (!this.selectedTeam) return;
+
+    this.resetTeamSelectionUI();
+
+    this.removeRoleChooser(this.selectedTeam);
+
+    const form = document.getElementById("choose-team-form");
+    const teamInput = form?.querySelector('input[name="team"]');
+    if (teamInput) {
+      teamInput.value = "";
+    }
+
+    this.selectedTeam = null;
+
+    console.log("Team selection canceled");
+  }
+
+  resetTeamSelectionUI() {
+    const allContainers = document.querySelectorAll(".team-container");
+    const allButtons = document.querySelectorAll(".join-team-btn");
+
+    allContainers.forEach((container) => {
+      container.classList.remove("selected-team");
+      container.style.transform = "";
+      container.style.boxShadow = "";
+      container.style.opacity = "";
+    });
+
+    allButtons.forEach((button) => {
+      button.disabled = false;
+      button.style.opacity = "";
+      button.style.cursor = "";
+      button.style.background = "";
+      button.style.border = "";
+      button.style.color = "";
+      button.style.pointerEvents = "auto";
+
+      const team = button.dataset.team;
+      button.textContent = `Join ${team} Team`;
+    });
+  }
+
+  removeRoleChooser(team) {
+    const ul = document.getElementById(team);
+    if (!ul) return;
+
+    const playerItems = ul.querySelectorAll(".player-item");
+    playerItems.forEach((item) => {
+      const roleSelector = item.querySelector(".role-selector");
+      if (roleSelector) {
+        item.remove();
+      }
+    });
   }
 }

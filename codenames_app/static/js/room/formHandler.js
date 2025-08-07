@@ -80,8 +80,8 @@ class FormHandler {
     }
 
     this.resetTeamSelectionUI();
-
-    this.removeRoleChooser(this.selectedTeam);
+    this.removeUserPreviousChoice(this.config.currentUser);
+    this.selectedTeam = null;
   }
 
   handleStartGame(event) {
@@ -142,13 +142,12 @@ class FormHandler {
     clone.closest(".role-selector").style.display = "block";
 
     const li = document.createElement("li");
-    li.className = "player-item";
+    li.classList.add("player-item", this.config.currentUser);
     li.innerHTML = `
       <span class="player-name">${this.config.currentUser}</span>
       <div class="role-selector"></div>
     `;
     li.querySelector(".role-selector").appendChild(clone);
-    console.log(ul, li);
 
     ul.appendChild(li);
     clone.focus();
@@ -159,7 +158,7 @@ class FormHandler {
 
     this.resetTeamSelectionUI();
 
-    this.removeRoleChooser(this.selectedTeam);
+    this.removeRoleChooser(this.config.currentUser);
 
     const form = document.getElementById("choose-team-form");
     const teamInput = form?.querySelector('input[name="team"]');
@@ -168,8 +167,6 @@ class FormHandler {
     }
 
     this.selectedTeam = null;
-
-    console.log("Team selection canceled");
   }
 
   resetTeamSelectionUI() {
@@ -197,14 +194,22 @@ class FormHandler {
     });
   }
 
-  removeRoleChooser(team) {
-    const ul = document.getElementById(team);
-    if (!ul) return;
-
-    const playerItems = ul.querySelectorAll(".player-item");
+  removeRoleChooser(username) {
+    const playerItems = document.querySelectorAll(".player-item");
     playerItems.forEach((item) => {
-      const roleSelector = item.querySelector(".role-selector");
-      if (roleSelector) {
+      if (
+        item.classList.contains(username) &&
+        item.querySelector(".in-selection")
+      ) {
+        item.remove();
+      }
+    });
+  }
+
+  static removeUserPreviousChoice(username) {
+    const playerItems = document.querySelectorAll(".player-item");
+    playerItems.forEach((item) => {
+      if (item.classList.contains(username)) {
         item.remove();
       }
     });

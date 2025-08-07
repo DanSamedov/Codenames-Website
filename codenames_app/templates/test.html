@@ -20,7 +20,18 @@
     {% csrf_token %} {{ choose_form.team }}
     <div class="team-container red-box-shadow flex flex-col">
       <h3 class="team-title text-[var(--primary-color)] mb-6">RED TEAM</h3>
-      <ul class="player-list space-y-2 flex-grow" id="Red"></ul>
+      <ul class="player-list space-y-2 flex-grow" id="Red">
+        {% for player in player_obj %} {% if player.team == "Red" %}
+        <li class="player-item {{ player.username }}">
+          <span class="player-name font-bold">{{ player.username }}</span>
+          <div class="role-selector">
+            <span class="text-[var(--text-light)] font-bold">
+              {% if player.leader %} Spymaster {% else %} Operative {% endif %}
+            </span>
+          </div>
+        </li>
+        {% endif %} {% endfor %}
+      </ul>
       <div class="mt-auto pt-4">
         <button type="button" class="join-team-btn join-red" data-team="Red">
           Join Red Team
@@ -29,7 +40,18 @@
     </div>
     <div class="team-container blue-box-shadow flex flex-col">
       <h3 class="team-title text-[var(--secondary-color)] mb-6">BLUE TEAM</h3>
-      <ul class="player-list space-y-2 flex-grow" id="Blue"></ul>
+      <ul class="player-list space-y-2 flex-grow" id="Blue">
+        {% for player in player_obj %} {% if player.team == "Blue" %}
+        <li class="player-item {{ player.username }}">
+          <span class="player-name font-bold">{{ player.username }}</span>
+          <div class="role-selector">
+            <span class="text-[var(--text-light)] font-bold">
+              {% if player.leader %} Spymaster {% else %} Operative {% endif %}
+            </span>
+          </div>
+        </li>
+        {% endif %} {% endfor %}
+      </ul>
       <div class="mt-auto pt-4">
         <button type="button" class="join-team-btn join-blue" data-team="Blue">
           Join Blue Team
@@ -37,7 +59,7 @@
       </div>
     </div>
     <template id="role-template">
-      <div class="role-selector">{{ choose_form.role }}</div>
+      <div class="role-selector in-selection">{{ choose_form.role }}</div>
     </template>
   </form>
   {% if current_player.creator %}

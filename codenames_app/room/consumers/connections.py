@@ -1,6 +1,7 @@
 import logging
 import re
 from asgiref.sync import async_to_sync
+from room.models import Player
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +22,14 @@ def connect(consumer):
     consumer.accept()
     logger.info(f"User connected: {consumer.username} to room {consumer.room_id}")
 
+    new_player = Player.objects.filter(game=consumer.room_id, username=consumer.username).first()
     async_to_sync(consumer.channel_layer.group_send)(
         consumer.room_group_name,
         {
             "type": "player_join",
-            "username": consumer.username
+            "username": new_player.username,
+            "role": new_player.leader,
+            "team": new_player.team
         }
     )
 

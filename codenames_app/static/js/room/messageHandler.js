@@ -17,9 +17,9 @@ class MessageHandler {
       case "unready":
         this.handleUnready(data);
         break;
-      //   case "player_join":
-      //     this.handlePlayerJoin(data);
-      //     break;
+      case "player_join":
+        this.handlePlayerJoin(data);
+        break;
       case "player_leave":
         this.handlePlayerLeave(data);
         break;
@@ -30,14 +30,9 @@ class MessageHandler {
 
   handleTeamChoice(data) {
     const { username, role, team } = data;
-    const playerElement = document.querySelector(`#player-${username}`);
 
-    if (playerElement) {
-      playerElement.querySelector(
-        ".player-role"
-      ).textContent = `Leader: ${role}`;
-      playerElement.querySelector(".player-team").textContent = `Team: ${team}`;
-    }
+    FormHandler.removeUserPreviousChoice(username);
+    this.addPlayerElement(username, role, team);
   }
 
   handleRestrictChoice() {
@@ -54,26 +49,38 @@ class MessageHandler {
     }
   }
 
-  // handlePlayerJoin(data) {
-  //     const { username } = data;
-
-  //     if (!document.querySelector(`#player-${username}`)) {
-  //         const playerList = document.querySelector('ul');
-  //         const newPlayer = document.createElement('li');
-  //         newPlayer.id = `player-${username}`;
-  //         newPlayer.innerHTML = `
-  //             <h3 class="player-nickname">Nickname: ${username}</h3>
-  //             <p class="player-creator">Creator: False</p>
-  //             <p class="player-role">Leader: False</p>
-  //             <p class="player-team">Team: None</p>`;
-  //         playerList.appendChild(newPlayer);
-  //     }
-  // }
+  handlePlayerJoin(data) {
+    const { username, role, team } = data;
+    if (!document.querySelector(`.${username}`)) {
+      this.addPlayerElement(username, role, team);
+    }
+  }
 
   handlePlayerLeave(data) {
-    const element = document.getElementById(`player-${data.username}`);
+    const element = document.querySelector(`.${data.username}`);
     if (element) {
       element.remove();
     }
+  }
+
+  addPlayerElement(username, role, team) {
+    const ul = document.getElementById(team);
+    const li = document.createElement("li");
+    li.classList.add("player-item", username);
+    li.innerHTML = `
+      <span class="player-name">${username}</span>
+      <div class="role-selector"></div>`;
+
+    const roleSelector = li.querySelector(".role-selector");
+    const span = document.createElement("span");
+    span.classList.add("text-[var(--text-light)]", "font-bold");
+    if (role === "True") {
+      span.textContent = "Spymaster";
+    } else {
+      span.textContent = "Operative";
+    }
+
+    roleSelector.appendChild(span);
+    ul.appendChild(li);
   }
 }

@@ -10,7 +10,7 @@ class GroupEventHandlers:
 
     @staticmethod
     def player_join(consumer, event):
-        GroupEventHandlers.send_action(consumer, 'player_join', username=event['username'])
+        GroupEventHandlers.send_action(consumer, 'player_join', username=event['username'], role=event['role'], team=event['team'])
 
     @staticmethod
     def team_choice(consumer, event):

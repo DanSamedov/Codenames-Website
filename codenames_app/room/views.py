@@ -20,5 +20,4 @@ def setup_room_view(request, id):
         'player_obj': player_obj,
         'current_player' : current_player,
     }
-    # return render(request, 'room.html', context)
-    return render(request, 'test.html', context)
+    return render(request, 'room.html', context)

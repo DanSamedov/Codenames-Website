@@ -1,9 +1,6 @@
-{% extends 'base.html' %}
-{% load static %}
-{% block styles %}
- <link rel="stylesheet" href="{% static '/css/game.css' %}" />
-{% endblock %}
-{% block content %}
+{% extends 'base.html' %} {% load static %} {% block styles %}
+<link rel="stylesheet" href="{% static '/css/game.css' %}" />
+{% endblock %} {% block content %}
 <h1>Game {{ game_obj.id }} Started</h1>
 <p>Your nickname: {{ current_player.username }}</p>
 <p>Your team: {{ current_player.team }}</p>
@@ -51,11 +48,11 @@
 {% block script %}
 <script>
   window.gameConfig = {
-    currentUser: '{{ current_player.username|escapejs }}',
+    currentUser: "{{ current_player.username|escapejs }}",
     currentRole: '{{ current_player.leader|yesno:"True,False" }}',
-    currentTeam: '{{ current_player.team|escapejs }}',
-    gameId: '{{ game_obj.id }}',
-    isLeader: '{{ current_player.leader|yesno:"true,false" }}'
+    currentTeam: "{{ current_player.team|escapejs }}",
+    gameId: "{{ game_obj.id }}",
+    isLeader: '{{ current_player.leader|yesno:"true,false" }}',
   };
 </script>
 

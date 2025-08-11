@@ -11,7 +11,7 @@ class CreateRoomForm(forms.ModelForm):
         }
         widgets = {
             'username': forms.TextInput(attrs={
-                'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-primary',
+                'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-primary rounded',
                 'placeholder': 'Enter your name',
                 'maxlength': '16',
                 'minlength': '3'
@@ -26,7 +26,7 @@ class JoinRoomForm(forms.Form):
         min_length=3,
         required=True,
         widget=forms.TextInput(attrs={
-            'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-secondary',
+            'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-secondary rounded',
             'placeholder': 'Enter your name'
         })
     )
@@ -35,7 +35,7 @@ class JoinRoomForm(forms.Form):
         label="Enter room id",
         required=True,
         widget=forms.NumberInput(attrs={
-            'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-secondary',
+            'class': 'w-full p-4 border bg-transparent text-white placeholder-white text-base input-field-secondary rounded',
             'placeholder': 'Enter room ID'
         })
     )

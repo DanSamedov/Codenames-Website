@@ -1,51 +1,120 @@
 {% extends 'base.html' %} {% load static %} {% block styles %}
-<link rel="stylesheet" href="{% static '/css/game.css' %}" />
+<link rel="stylesheet" href="{% static 'css/dist/game.css' %}" />
 {% endblock %} {% block content %}
-<h1>Game {{ game_obj.id }} Started</h1>
-<p>Your nickname: {{ current_player.username }}</p>
-<p>Your team: {{ current_player.team }}</p>
+<main class="flex items-center justify-center">
+  <div class="flex flex-col items-center flex-grow max-w-6xl p-4">
+    <div class="text-center">
+      <h2 class="bebas-neue text-5xl md:text-6xl tracking-wider">
+        <span
+          class="{% if current_player.team == 'Red' %}text-[var(--primary-color)]{% else %}text-[var(--secondary-color)]{% endif %}"
+        >
+          {{ current_player.username }}
+        </span>
+      </h2>
+      <span class="text-xl text-[var(--text-light)]">
+        Game {{ game_obj.id }}
+      </span>
+    </div>
+    <ul class="grid grid-cols-5 gap-4 p-4 w-full" id="cards">
+      {% for card in cards_list %}
+      <li
+        class="bg-[var(--accent-color)] p-4 rounded shadow-lg flex items-center justify-center h-28 md:h-32 cursor-pointer hover:bg-gray-700 transition duration-300"
+        id="card-{{ card.word }}"
+        data-is-chosen="{% if card.word in guessed_cards %}guessed{% else %}false{% endif %}"
+        onclick="card_choice(this.id)"
+      >
+        <span class="text-xl md:text-2xl font-medium bebas-neue text-center">
+          {{ card.word}}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if current_player.leader %}
+    <form
+      id="hint-form"
+      class="mt-6 mr-6 md:mr-8 lg:mr-12 hidden items-center space-x-3 md:space-x-5"
+    >
+      <div
+        id="hint-word-input"
+        class="flex items-center space-x-3 md:space-x-5"
+      >
+        <label class="form-label hidden" for="hintWordInput"
+          >Enter the hint</label
+        >
+        <input
+          type="text"
+          id="hintWordInput"
+          class="bg-[var(--accent-color)] border border-[var(--text-dark)] rounded px-4 py-2 min-w-[112px] md:min-w-[128px] lg:min-w-[144px] text-2xl md:text-3xl bebas-neue placeholder:text-2xl md:placeholder:text-3xl focus:outline-none focus:ring-2 focus:ring-[var(--secondary-color)]"
+          placeholder="Enter hint word"
+          required
+        />
 
-<ul id="cards">
-  {% for card in cards_list %}
-  <li
-    id="card-{{ card.word }}"
-    data-is-chosen="{% if card.word in guessed_cards %}guessed{% else %}false{% endif %}"
-    onclick="card_choice(this.id)"
-  >
-    {{ card.word }}
-  </li>
-  {% endfor %}
-</ul>
-{% if current_player.leader %}
-<form id="hint-form" class="visually-hidden">
-  <div id="hint-word-input">
-    <!-- prettier-ignore -->
-    <label
-        class="form-label visually-hidden"
-        for="hintWordInput">Enter the hint
-    </label>
-    <!-- prettier-ignore -->
-    <input type="text" id="hintWordInput" placeholder="Enter hint word" required/>
+        <label class="form-label hidden" for="hintNumInput"
+          >Enter number of words</label
+        >
+        <input
+          type="number"
+          id="hintNumInput"
+          class="bg-[var(--accent-color)] border border-[var(--text-dark)] rounded px-4 py-2 min-w-[112px] md:min-w-[128px] lg:min-w-[144px] text-2xl md:text-3xl bebas-neue placeholder:text-2xl md:placeholder:text-3xl focus:outline-none focus:ring-2 focus:ring-[var(--secondary-color)]"
+          placeholder="Enter a number"
+          required
+        />
+      </div>
 
-    <!-- prettier-ignore -->
-    <label
-        class="form-label visually-hidden"
-        for="hintNumInput">Enter number of words
-    </label>
-    <!-- prettier-ignore -->
-    <input type="number" id="hintNumInput" placeholder="Enter number of words" required/>
+      <button
+        type="submit"
+        name="hint-form-submit"
+        class="text-[var(--text-light)] bebas-neue text-2xl md:text-3xl px-4 py-2 rounded transition duration-300 {% if current_player.team == 'Red' %} bg-[var(--primary-color)] hover:bg-red-700 {% else %} bg-[var(--secondary-color)] hover:bg-blue-700 {% endif %}"
+      >
+        Give the hint
+      </button>
+    </form>
+    {% endif %}
+
+    <div class="hint-container">
+      <div
+        id="hint-display"
+        class="hint-display mt-6 w-full flex-col md:flex-row items-center justify-center gap-2 md:gap-3 md:max-w-3xl bg-[var(--accent-color)] border border-[var(--text-dark)] rounded px-4 py-3 text-center shadow-md text-[var(--text-light)] bebas-neue leading-tight hidden"
+        aria-live="polite"
+        role="status"
+      >
+        <div class="hint-section flex items-center">
+          <span class="hint-label text-lg md:text-base opacity-80">Hint:</span>
+          <span
+            id="hint-word"
+            class="hint-word text-xl md:text-3xl lg:text-3xl ml-2 text-[var(--highlight-color)]"
+          ></span>
+        </div>
+
+        <div class="hint-separator hidden md:inline text-lg opacity-60">|</div>
+
+        <div class="words-section flex items-center">
+          <span class="words-label text-lg md:text-base opacity-80"
+            >Words:</span
+          >
+          <span
+            id="hint-number"
+            class="hint-number text-xl md:text-3xl lg:text-3xl ml-2 text-[var(--highlight-color)]"
+          ></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 md:mt-8">
+      <div
+        id="timer-container"
+        class="min-w-[112px] md:min-w-[128px] lg:min-w-[144px] text-center rounded px-4 py-2 border border-[var(--text-dark)] bg-[var(--accent-color)] bebas-neue text-[var(--light-text)]"
+      >
+        <span class="text-lg md:text-2xl opacity-80 text-[var(--text-light)]"
+          >Time left:</span
+        >
+        <span id="timer" class="text-2xl md:text-3xl"></span>
+      </div>
+    </div>
   </div>
-  <button type="submit" name="hint-form-submit">Give the hint</button>
-</form>
-<!-- prettier-ignore -->
-{% endif %}
-<p id="hintDisplay"></p>
-<p id="timer"></p>
-<!-- prettier-ignore -->
+</main>
 {{ cards_list|json_script:"cards-data" }}
-{{game_obj.id|json_script:"game-id-data" }}
-{% endblock %}
-{% block script %}
+{{game_obj.id|json_script:"game-id-data" }} {% endblock %} {% block script %}
 <script>
   window.gameConfig = {
     currentUser: "{{ current_player.username|escapejs }}",

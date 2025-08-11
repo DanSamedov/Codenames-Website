@@ -5,11 +5,11 @@
 }
 
 .btn-primary {
-    @apply bg-[var(--primary-color)] text-white hover:bg-red-700;
+    @apply bg-[var(--primary-color)] text-white hover:bg-red-700 rounded;
 }
 
 .btn-secondary {
-    @apply bg-transparent border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] hover:bg-[var(--secondary-color)] hover:text-white;
+    @apply bg-transparent border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] hover:bg-[var(--secondary-color)] hover:text-white rounded;
 }
 
 .modal-backdrop {

@@ -20,5 +20,4 @@ def game_view(request, id):
         'guessed_cards': guessed_cards,
     }
 
-    # return render(request, 'game.html', context)
-    return render(request, 'test.html', context)
+    return render(request, 'game.html', context)

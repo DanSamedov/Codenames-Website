@@ -18,9 +18,9 @@
         >
       </h1>
       <p class="mt-4 text-lg text-gray-400 max-w-lg mx-auto md:mx-0">
-        Your mission, should you choose to accept it, involves clandestine
-        communication and tactical word association. Assemble your team. Crack
-        the code. Avoid the assassin.
+        Talk in code, think fast, and outsmart the other team. Give clever
+        clues, guess the right words, and whatever you do — don’t pick the
+        assassin.
       </p>
       <div
         class="mt-10 flex flex-col sm:flex-row justify-center md:justify-start space-y-4 sm:space-y-0 sm:space-x-4"
@@ -29,13 +29,13 @@
           class="btn btn-primary red-box-shadow"
           data-open="modal-establish"
         >
-          Establish Covert Room
+          START NEW MISSION
         </button>
         <button
           class="btn btn-secondary blue-box-shadow"
           data-open="modal-infiltrate"
         >
-          Infiltrate Room
+          JOIN MISSION
         </button>
       </div>
     </div>
@@ -84,7 +84,7 @@
         />
       </svg>
     </button>
-    <h2 class="text-3xl font-bold mb-6">Create Room</h2>
+    <h2 class="text-3xl font-bold mb-6">Create Mission</h2>
 
     <form class="space-y-8" method="POST">
       {% csrf_token %}
@@ -132,7 +132,7 @@
         />
       </svg>
     </button>
-    <h2 class="text-3xl font-bold mb-6">Join Room</h2>
+    <h2 class="text-3xl font-bold mb-6">Join Mission</h2>
 
     <form class="space-y-8" method="POST">
       {% csrf_token %}

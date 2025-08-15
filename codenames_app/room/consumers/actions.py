@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def change_team(consumer, role, team):
     current_player = Player.objects.filter(game=consumer.room_id, username=consumer.username).first()
 
-    if current_player and not Card.objects.filter(game=consumer.room_id).exists():
+    if not current_player.ready:
         current_player.leader = role
         current_player.team = team
         current_player.ready = True

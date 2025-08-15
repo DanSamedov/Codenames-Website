@@ -4,7 +4,7 @@
   class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
 >
   <div
-    class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-12 relative"
+    class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-6 md:p-12 relative"
   >
     <button
       class="modal-btn-close absolute top-4 right-4 text-gray-300 hover:text-white text-xl"
@@ -25,8 +25,109 @@
         />
       </svg>
     </button>
-    <h2 class="text-3xl font-bold mb-6">Mission Briefing</h2>
-    <!-- modal content here -->
+
+    <h2
+      class="text-3xl md:text-4xl bebas-neue mb-6 text-center text-[var(--primary-color)]"
+    >
+      Codenames — Rules
+    </h2>
+
+    <div class="space-y-6 text-sm md:text-base leading-relaxed">
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Objective</h3>
+        <p>
+          Two teams compete to be the first to identify all of their team’s
+          words on the grid using one-word clues from their Spymaster.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Setup</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            Split into two teams: <strong>Red</strong> and
+            <strong>Blue</strong>. Each team chooses a
+            <strong>Spymaster</strong> (gives clues) and
+            <strong>Field Operatives</strong> (guessers).
+          </li>
+          <li>Lay out a 5×5 grid of word cards (or words on screen).</li>
+          <li>
+            Randomly select a key card that marks which words belong to Red,
+            Blue, Neutral, and the Assassin. Only Spymasters can see the key.
+          </li>
+          <li>The starting team has one extra word to guess.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Turn Structure</h3>
+        <ol class="list-decimal pl-5 space-y-1">
+          <li>
+            <strong>Clue Phase:</strong> The Spymaster gives exactly one word as
+            a clue plus a number indicating how many words relate to the clue
+            (e.g., <em>“Ocean: 2”</em>).
+          </li>
+          <li>
+            <strong>Guess Phase:</strong> The Operatives discuss and select
+            words, revealing their identity after each round.
+          </li>
+        </ol>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Giving Clues — Rules</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            Clue must be a single word (no hyphens or multi-word phrases).
+          </li>
+          <li>
+            No forms, parts, translations, or spelling tweaks of unrevealed
+            words on the grid.
+          </li>
+          <li>No gestures, sounds, or extra hints.</li>
+          <li>
+            Number indicates how many words you want to link.
+            <code>0</code> is allowed.
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Making Guesses — Rules</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            Operatives may guess up to <strong>number + 1</strong> times (the
+            extra guess can catch up on older clues).
+          </li>
+          <li>
+            Revealing a card:
+            <ul class="list-disc pl-5 space-y-1">
+              <li>
+                <strong>Your Team’s Word:</strong> Covered with your color, keep
+                guessing.
+              </li>
+              <li>
+                <strong>Neutral Word:</strong> Covered neutral, turn ends.
+              </li>
+              <li>
+                <strong>Opponent’s Word:</strong> Covered with opponent’s color,
+                turn ends and helps them.
+              </li>
+              <li><strong>Assassin:</strong> Immediate loss.</li>
+            </ul>
+          </li>
+          <li>You may stop guessing anytime after at least one guess.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Ending the Game</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>First team to guess all their words wins.</li>
+          <li>Guessing the Assassin loses instantly.</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -35,7 +136,7 @@
   class="modal-backdrop fixed inset-0 items-center justify-center bg-black bg-opacity-80 z-[9999] p-4 hidden"
 >
   <div
-    class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-12 relative"
+    class="w-full h-full max-w-[880px] max-h-[90vh] bg-[#1A1A1A] rounded text-white overflow-auto p-6 md:p-12 relative"
   >
     <button
       class="modal-btn-close absolute top-4 right-4 text-gray-300 hover:text-white text-xl"
@@ -56,7 +157,128 @@
         />
       </svg>
     </button>
-    <h2 class="text-3xl font-bold mb-6">Intel</h2>
-    <!-- modal content here -->
+
+    <h2
+      class="text-3xl md:text-4xl bebas-neue mb-6 text-center text-[var(--secondary-color)]"
+    >
+      About This Project
+    </h2>
+
+    <div class="space-y-6 text-sm md:text-base leading-relaxed">
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Overview</h3>
+        <p>
+          This is a real-time, multiplayer version of the game
+          <strong>Codenames</strong>, designed for seamless play directly in the
+          browser. It focuses on delivering a responsive, fast, and engaging
+          experience whether played locally or across the globe. The project was
+          built with scalability, maintainability, and professional deployment
+          standards in mind.
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Key Features</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>Real-time multiplayer gameplay powered by WebSockets.</li>
+          <li>
+            Fully responsive UI built with <strong>Tailwind CSS</strong> for
+            smooth desktop & mobile experience.
+          </li>
+          <li>
+            Persistent game states using <strong>MySQL</strong> and in-memory
+            caching with <strong>Redis</strong>.
+          </li>
+          <li>
+            Secure, production-grade deployment with <strong>Ubuntu</strong>,
+            <strong>Nginx</strong>, and <strong>Certbot</strong> for SSL
+            encryption.
+          </li>
+          <li>
+            Dockerized environment ensuring reproducibility and easy scaling.
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Tech Stack</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            <strong>Backend:</strong> Django, Django Channels (WebSockets),
+            Python
+          </li>
+          <li>
+            <strong>Database:</strong> MySQL (persistent data), Redis (real-time
+            state & caching)
+          </li>
+          <li>
+            <strong>Frontend:</strong> HTML5, Tailwind CSS, JavaScript (vanilla
+            + DOM manipulation)
+          </li>
+          <li>
+            <strong>Deployment:</strong> Docker, Docker Compose, Ubuntu Server,
+            GitHub Actions, Nginx, Certbot
+          </li>
+          <li>
+            <strong>Version Control:</strong> Git (GitHub-hosted repository)
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Development Practices</h3>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            Clean, modular code structure for easy maintenance and extension.
+          </li>
+          <li>
+            Environment variables for sensitive configuration and secure
+            deployments.
+          </li>
+          <li>
+            Automated build & deploy pipeline via GitHub Actions, ensuring every
+            push is tested and deployed to production without manual steps.
+          </li>
+          <li>Optimized assets and lazy loading to ensure fast page loads.</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xl bebas-neue mb-2">Credits</h3>
+        <p>
+          Designed & developed by <strong>Danylo Samedov</strong>. You can
+          explore more of my work and connect with me here:
+        </p>
+        <ul class="list-disc pl-5 space-y-1">
+          <li>
+            🌐
+            <a
+              href="#"
+              target="_blank"
+              class="text-[var(--secondary-color)] hover:underline"
+              >Portfolio Website</a
+            >
+          </li>
+          <li>
+            💻
+            <a
+              href="https://github.com/DanSamedov"
+              target="_blank"
+              class="text-[var(--secondary-color)] hover:underline"
+              >GitHub</a
+            >
+          </li>
+          <li>
+            🔗
+            <a
+              href="https://www.linkedin.com/in/danylo-samedov-b557132b1/"
+              target="_blank"
+              class="text-[var(--secondary-color)] hover:underline"
+              >LinkedIn</a
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </div>

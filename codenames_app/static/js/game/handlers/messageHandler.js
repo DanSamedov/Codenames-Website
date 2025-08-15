@@ -113,7 +113,7 @@ class GameMessageHandler {
     if (!this.gameState.hasWinnerBeenShown) {
       this.gameState.hasWinnerBeenShown = true;
       this.gameState.clearTimer();
-      this.uiManager.showWinner(data.winner);
+      this.uiManager.alertWinner(data.winner);
       this.websocketManager.close();
       this.uiManager.redirectToHome();
     }

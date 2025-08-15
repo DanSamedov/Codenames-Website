@@ -65,17 +65,7 @@ class UIManager {
     this.hintDisplay.classList.add("hidden");
   }
 
-  showWinner(winner) {
-    const hintDisplay = document.getElementById("hint-display");
-    const timer = document.getElementById("timer");
-
-    if (hintDisplay) {
-      hintDisplay.innerHTML = `<h2>🎉 Team ${winner} Wins! Redirecting...</h2>`;
-    }
-    if (timer) {
-      timer.textContent = "";
-    }
-
+  alertWinner(winner) {
     alert(`${winner} Team wins!`);
   }
 

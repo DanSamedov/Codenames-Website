@@ -52,7 +52,7 @@ class GameEventProcessor:
                 logger.info(f"Assassin card picked: {potential_assassin.word} by team {team}")
                 Card.objects.filter(pk=potential_assassin.pk).update(is_guessed=True)
 
-                winner = team
+                winner = TEAM_BLUE if team == TEAM_RED else TEAM_RED
                 game.winners = winner
                 game.save(update_fields=['winners'])
                 logger.debug(f"Game over due to assassin pick. Winner: {winner}")

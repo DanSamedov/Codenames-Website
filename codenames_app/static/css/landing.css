@@ -12,20 +12,6 @@
     @apply bg-transparent border-2 border-[var(--secondary-color)] text-[var(--secondary-color)] hover:bg-[var(--secondary-color)] hover:text-white rounded;
 }
 
-.modal-backdrop {
-    transition: opacity 0.3s ease-in-out;
-}
-
-.modal-backdrop.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.modal-backdrop.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .input-field-primary:focus {
     border-color: var(--primary-color) !important;
     outline: none;

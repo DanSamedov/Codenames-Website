@@ -10,11 +10,11 @@
   <body
     class="min-h-screen flex flex-col bg-[var(--bg-color)] text-[var(--text-light)]"
   >
-    {% include "components/header.html" %}
-    <!-- prettier-ignore -->
-    {% block content%} {% endblock %}
+    {% include "components/header.html" %} {% block content%} {% endblock %}
 
-    {% include "components/footer.html" %}
+    <div class="hidden md:block mt-auto" id="site-footer-desktop">
+      {% include "components/footer.html" %}
+    </div>
     {% include "components/modals.html" %}
 
     <script src="{% static 'js/modal.js' %}"></script>

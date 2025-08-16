@@ -1,0 +1,15 @@
+@import "base.css";
+
+.modal-backdrop {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.modal-backdrop.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-backdrop.visible {
+    opacity: 1;
+    pointer-events: auto;
+}

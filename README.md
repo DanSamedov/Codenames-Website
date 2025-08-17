@@ -30,13 +30,6 @@ Web Server: Nginx (+ Certbot for HTTPS)
 
 Deployment: Docker & Docker Compose
 
-📦 Project Structure
-Codenames-Website/
-├── codenames_app/ # Django project source code
-├── docker-compose.prod.yml
-├── nginx/ # Nginx configuration for production
-└── redis/ # Redis configuration
-
 📄 License
 
 This project is provided as-is without an explicit license. Contact the author if you would like to reuse the code.

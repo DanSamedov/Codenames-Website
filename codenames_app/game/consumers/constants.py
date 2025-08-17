@@ -10,8 +10,8 @@ TEAM_NEUTRAL = "Neutral"
 TEAM_ASSASSIN = "Black"
 
 # Phase durations (seconds)
-HINT_PHASE_DURATION = 10
-ROUND_PHASE_DURATION = 20
+HINT_PHASE_DURATION = 60
+ROUND_PHASE_DURATION = 120
 PHASE_CACHE_TIMEOUT_BUFFER = 5
 
 # Event/action names (for WebSocket communication)

@@ -1,4 +1,4 @@
-Codenames Website
+Codenames Game
 
 An online adaptation of the Codenames board game, showcasing full-stack development with real-time multiplayer, a Django backend, and a Tailwind-powered UI.
 

@@ -27,7 +27,7 @@ services:
     volumes:
       - static_volume:/codenames/codenames_app/staticfiles
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
+      test: ["CMD", "curl", "-f", "-H", "X-Forwarded-Proto: https", "http://localhost:8000/up"]
       interval: 30s
       timeout: 10s
       retries: 3

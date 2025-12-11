@@ -73,17 +73,6 @@ services:
       - WEBSOCKET_HOST=ws://web:8000
     restart: always
 
-  certbot:
-    image: certbot/certbot
-    volumes:
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
-    networks:
-      - frontend
-    depends_on:
-      - nginx
-    command: certonly --webroot -w /var/www/certbot --email danasamedov@email.com --agree-tos --no-eff-email -d codenames.samedov.org --keep-until-expiring --noninteractive
-
   tailwind:
     image: node:20-alpine
     working_dir: /app/static/tailwind
@@ -97,8 +86,6 @@ volumes:
   db_data:
   redis_data:
   static_volume:
-  certbot_www:
-  certbot_conf:
 
 networks:
   backend:

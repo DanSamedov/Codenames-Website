@@ -57,9 +57,7 @@ services:
       retries: 3
 
   nginx:
-    build:
-      context: .
-      dockerfile: nginx/Dockerfile
+    image: nginx:1.25-alpine
     ports:
       - "8001:80"
     volumes:
